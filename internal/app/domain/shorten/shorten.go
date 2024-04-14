@@ -5,17 +5,17 @@ import (
 	"github.com/lookeme/short-url/internal/utils"
 )
 
-type UrlService struct {
+type URLService struct {
 	shortenRepository storage.Repository
 }
 
-func NewUrlService(repository storage.Repository) *UrlService {
-	return &UrlService{
+func NewURLService(repository storage.Repository) *URLService {
+	return &URLService{
 		shortenRepository: repository,
 	}
 }
 
-func (s *UrlService) CreateAndSave(key string) (string, error) {
+func (s *URLService) CreateAndSave(key string) (string, error) {
 	val, ok := s.FindByURL(key)
 	if !ok {
 		token := utils.NewShortToken(7)
@@ -29,10 +29,10 @@ func (s *UrlService) CreateAndSave(key string) (string, error) {
 	}
 }
 
-func (s *UrlService) FindByURL(key string) (string, bool) {
+func (s *URLService) FindByURL(key string) (string, bool) {
 	return s.shortenRepository.FindByURL(key)
 }
 
-func (s *UrlService) FindByKey(key string) (string, bool) {
+func (s *URLService) FindByKey(key string) (string, bool) {
 	return s.shortenRepository.FindByKey(key)
 }

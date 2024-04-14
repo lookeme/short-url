@@ -1,4 +1,4 @@
-package shorten
+package handler
 
 import (
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
@@ -7,19 +7,19 @@ import (
 	"net/http"
 )
 
-type UrlHandler struct {
-	urlService *shorten.UrlService
+type URLHandler struct {
+	urlService *shorten.URLService
 	cfg        *configuration.NetworkCfg
 }
 
-func NewUrlHandler(urlService *shorten.UrlService, cfg *configuration.NetworkCfg) *UrlHandler {
-	return &UrlHandler{
+func NewURLHandler(urlService *shorten.URLService, cfg *configuration.NetworkCfg) *URLHandler {
+	return &URLHandler{
 		urlService: urlService,
 		cfg:        cfg,
 	}
 }
 
-func (h *UrlHandler) Index(w http.ResponseWriter, r *http.Request) {
+func (h *URLHandler) Index(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		h.handleGet(w, r)
@@ -30,8 +30,11 @@ func (h *UrlHandler) Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *UrlHandler) handlePOST(res http.ResponseWriter, req *http.Request) {
+func (h *URLHandler) handlePOST(res http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
 	val, err := h.urlService.CreateAndSave(string(b))
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
@@ -43,9 +46,12 @@ func (h *UrlHandler) handlePOST(res http.ResponseWriter, req *http.Request) {
 		host = "localhost:8080"
 	}
 	url := "http://" + host + "/" + val
-	res.Write([]byte(url))
+	_, err = res.Write([]byte(url))
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
 }
-func (h *UrlHandler) handleGet(res http.ResponseWriter, req *http.Request) {
+func (h *URLHandler) handleGet(res http.ResponseWriter, req *http.Request) {
 	id := req.RequestURI[1:]
 	if id == "" {
 		http.Error(res, "ID is not provided in path", http.StatusBadRequest)

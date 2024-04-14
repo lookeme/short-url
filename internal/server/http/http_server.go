@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
-	shorten2 "github.com/lookeme/short-url/internal/server/http/handler/shorten"
+	"github.com/lookeme/short-url/internal/server/handler"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 	"log"
 	"net/http"
@@ -16,7 +16,7 @@ var (
 )
 
 type Server struct {
-	handler *shorten2.UrlHandler
+	handler *handler.URLHandler
 	config  *configuration.NetworkCfg
 }
 
@@ -41,8 +41,8 @@ func Run() error {
 		}
 	}
 	storage := inmemory.NewStorage()
-	urlService := shorten.NewUrlService(storage)
-	urlHandler := shorten2.NewUrlHandler(urlService, cfg.Network)
+	urlService := shorten.NewURLService(storage)
+	urlHandler := handler.NewURLHandler(urlService, cfg.Network)
 	server := Server{
 		handler: urlHandler,
 		config:  cfg.Network,
