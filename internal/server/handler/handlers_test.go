@@ -1,10 +1,8 @@
 package handler
 
 import (
-	_ "encoding/json"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
-	_ "github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
