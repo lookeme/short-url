@@ -22,6 +22,6 @@ func (s *Server) Serve() error {
 	r := chi.NewRouter()
 	r.Post("/", s.Handler.HandlePOST)
 	r.Get("/{id}", s.Handler.HandleGet)
-	fmt.Printf("Starting server on port %s", s.Config.StartAddress)
-	return http.ListenAndServe(s.Config.StartAddress, r)
+	fmt.Printf("Starting server on port %s", s.Config.ServerAddress)
+	return http.ListenAndServe(s.Config.ServerAddress, r)
 }

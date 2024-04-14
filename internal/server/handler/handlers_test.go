@@ -15,8 +15,8 @@ import (
 
 func TestURLHandlerIndex(t *testing.T) {
 	netCfg := configuration.NetworkCfg{
-		StartAddress: ":8080",
-		BaseAddress:  "http://localhost:8080/",
+		ServerAddress: ":8080",
+		BaseURL:       "http://localhost:8080/",
 	}
 	cfg := configuration.Config{
 		Network: &netCfg,

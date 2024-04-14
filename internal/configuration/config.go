@@ -11,8 +11,8 @@ type Config struct {
 }
 
 type NetworkCfg struct {
-	StartAddress string `yaml:"address"`
-	BaseAddress  string `yaml:"base-address"`
+	ServerAddress string `yaml:"address"`
+	BaseURL       string `yaml:"base-url"`
 }
 
 func LoadCfg(filePath string) (*Config, error) {
