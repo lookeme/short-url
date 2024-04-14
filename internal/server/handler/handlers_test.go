@@ -23,7 +23,7 @@ func TestURLHandlerIndex(t *testing.T) {
 	t.Run("handler test #1", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/", bodyReader)
 		w := httptest.NewRecorder()
-		urlHandler.Index(w, req)
+		urlHandler.HandlePOST(w, req)
 		res := w.Result()
 		assert.Equal(t, http.StatusCreated, res.StatusCode)
 		assert.Equal(t, "text/plain", res.Header.Get("Content-Type"))
@@ -36,7 +36,7 @@ func TestURLHandlerIndex(t *testing.T) {
 		require.NoError(t, err)
 		req = httptest.NewRequest(http.MethodGet, "/"+key, nil)
 		w = httptest.NewRecorder()
-		urlHandler.Index(w, req)
+		urlHandler.HandleGet(w, req)
 		res = w.Result()
 		assert.Equal(t, http.StatusTemporaryRedirect, res.StatusCode)
 		assert.Equal(t, requestBody, res.Header.Get("Location"))

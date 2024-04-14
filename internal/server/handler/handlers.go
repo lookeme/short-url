@@ -19,18 +19,7 @@ func NewURLHandler(urlService *shorten.URLService, cfg *configuration.NetworkCfg
 	}
 }
 
-func (h *URLHandler) Index(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		h.handleGet(w, r)
-	case http.MethodPost:
-		h.handlePOST(w, r)
-	default:
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	}
-}
-
-func (h *URLHandler) handlePOST(res http.ResponseWriter, req *http.Request) {
+func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
@@ -51,7 +40,7 @@ func (h *URLHandler) handlePOST(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 }
-func (h *URLHandler) handleGet(res http.ResponseWriter, req *http.Request) {
+func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 	id := req.RequestURI[1:]
 	if id == "" {
 		http.Error(res, "ID is not provided in path", http.StatusBadRequest)

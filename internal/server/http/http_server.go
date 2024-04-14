@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/server/handler"
@@ -21,14 +22,11 @@ type Server struct {
 }
 
 func (s *Server) Serve() error {
-	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, s.handler.Index)
-	var host string
-	if s.config == nil {
-		host = ":8080"
-	}
-	fmt.Println("Starting server on ", host)
-	return http.ListenAndServe(host, mux)
+	r := chi.NewRouter()
+	r.Post("/", s.handler.HandlePOST)
+	r.Get("/{id}", s.handler.HandleGet)
+	fmt.Println("Starting server on ")
+	return http.ListenAndServe(":8080", r)
 }
 
 func Run() error {
