@@ -13,7 +13,7 @@ var (
 )
 
 func parseFlags() {
-	flag.StringVar(&networkCfg.StartAddress, "a", ":8080", "address and port to run server")
-	flag.StringVar(&networkCfg.BaseAddress, "b", "http://localhost:8000", "base address")
+	flag.StringVar(&networkCfg.StartAddress, "a", "localhost:8080", "address and port to run server")
+	flag.StringVar(&networkCfg.BaseAddress, "b", "http://localhost:8080", "base address")
 	flag.Parse()
 }
