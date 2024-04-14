@@ -31,7 +31,7 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	}
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	url := fmt.Sprintf("http://%s/%s", h.cfg.BaseAddress, val)
+	url := fmt.Sprintf("%s/%s", h.cfg.BaseAddress, val)
 	_, err = res.Write([]byte(url))
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)

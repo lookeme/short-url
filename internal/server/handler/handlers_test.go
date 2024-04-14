@@ -3,6 +3,7 @@ package handler
 import (
 	_ "encoding/json"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
+	"github.com/lookeme/short-url/internal/configuration"
 	_ "github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
@@ -15,9 +16,16 @@ import (
 )
 
 func TestURLHandlerIndex(t *testing.T) {
+	netCfg := configuration.NetworkCfg{
+		StartAddress: ":8080",
+		BaseAddress:  "http://localhost:8080",
+	}
+	cfg := configuration.Config{
+		Network: &netCfg,
+	}
 	storage := inmemory.NewStorage()
 	urlService := shorten.NewURLService(storage)
-	urlHandler := NewURLHandler(urlService, nil)
+	urlHandler := NewURLHandler(urlService, &cfg)
 	requestBody := "https://practicum.yandex.ru/"
 	bodyReader := strings.NewReader(requestBody)
 	t.Run("handler test #1", func(t *testing.T) {
