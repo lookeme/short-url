@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
 	"io"
@@ -12,10 +13,10 @@ type URLHandler struct {
 	cfg        *configuration.NetworkCfg
 }
 
-func NewURLHandler(urlService *shorten.URLService, cfg *configuration.NetworkCfg) *URLHandler {
+func NewURLHandler(urlService *shorten.URLService, cfg *configuration.Config) *URLHandler {
 	return &URLHandler{
 		urlService: urlService,
-		cfg:        cfg,
+		cfg:        cfg.Network,
 	}
 }
 
@@ -30,11 +31,7 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	}
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	var host string
-	if h.cfg == nil {
-		host = "localhost:8080"
-	}
-	url := "http://" + host + "/" + val
+	url := fmt.Sprintf("http://%s/%s", h.cfg.BaseAddress, val)
 	_, err = res.Write([]byte(url))
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)

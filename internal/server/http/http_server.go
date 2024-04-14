@@ -3,11 +3,8 @@ package http
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/server/handler"
-	"github.com/lookeme/short-url/internal/storage/inmemory"
-	"log"
 	"net/http"
 	"os"
 )
@@ -17,33 +14,14 @@ var (
 )
 
 type Server struct {
-	handler *handler.URLHandler
-	config  *configuration.NetworkCfg
+	Handler handler.URLHandler
+	Config  configuration.NetworkCfg
 }
 
 func (s *Server) Serve() error {
 	r := chi.NewRouter()
-	r.Post("/", s.handler.HandlePOST)
-	r.Get("/{id}", s.handler.HandleGet)
-	fmt.Println("Starting server on ")
-	return http.ListenAndServe(":8080", r)
-}
-
-func Run() error {
-	cfg := &configuration.Config{}
-	if ConfigFile != "" {
-		var err error
-		cfg, err = configuration.LoadCfg(ConfigFile)
-		if err != nil {
-			log.Fatal("Can't find configuration file")
-		}
-	}
-	storage := inmemory.NewStorage()
-	urlService := shorten.NewURLService(storage)
-	urlHandler := handler.NewURLHandler(urlService, cfg.Network)
-	server := Server{
-		handler: urlHandler,
-		config:  cfg.Network,
-	}
-	return server.Serve()
+	r.Post("/", s.Handler.HandlePOST)
+	r.Get("/{id}", s.Handler.HandleGet)
+	fmt.Printf("Starting server on port %s", s.Config.StartAddress)
+	return http.ListenAndServe(s.Config.StartAddress, r)
 }
