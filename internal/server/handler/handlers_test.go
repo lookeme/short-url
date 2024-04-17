@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+	"github.com/go-chi/chi/v5"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
@@ -9,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -36,13 +39,16 @@ func TestURLHandlerIndex(t *testing.T) {
 		responseBody, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 		assert.True(t, len(string(responseBody)) > 0)
-		url := strings.Split(string(responseBody), "/")
-		key := url[len(url)-1]
+		u, err := url.Parse(string(responseBody))
+		key := u.Path[1:len(u.Path)]
 		err = res.Body.Close()
 		require.NoError(t, err)
-		req = httptest.NewRequest(http.MethodGet, "/"+key, nil)
+		r := httptest.NewRequest(http.MethodGet, "/{id}", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", key)
+		r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 		w = httptest.NewRecorder()
-		urlHandler.HandleGet(w, req)
+		urlHandler.HandleGet(w, r)
 		res = w.Result()
 		assert.Equal(t, http.StatusTemporaryRedirect, res.StatusCode)
 		assert.Equal(t, requestBody, res.Header.Get("Location"))
