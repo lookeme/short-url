@@ -40,6 +40,7 @@ func TestURLHandlerIndex(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, len(string(responseBody)) > 0)
 		u, err := url.Parse(string(responseBody))
+		require.NoError(t, err)
 		key := u.Path[1:len(u.Path)]
 		err = res.Body.Close()
 		require.NoError(t, err)

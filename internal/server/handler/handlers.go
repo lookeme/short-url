@@ -26,7 +26,7 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
 	url, err := url.Parse(string(b))
 	if err != nil {
-		fmt.Errorf("invalid url %s", url)
+		fmt.Println("invalid url: ", url)
 	}
 	val, err := h.urlService.CreateAndSave(string(b))
 	if err != nil {
