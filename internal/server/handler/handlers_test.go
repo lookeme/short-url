@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 )
@@ -39,17 +38,16 @@ func TestURLHandlerIndex(t *testing.T) {
 		responseBody, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 		assert.True(t, len(string(responseBody)) > 0)
-		u, err := url.Parse(string(responseBody))
-		require.NoError(t, err)
-		key := u.Path[1:len(u.Path)]
+		url := strings.Split(string(responseBody), "/")
+		key := url[len(url)-1]
 		err = res.Body.Close()
 		require.NoError(t, err)
-		r := httptest.NewRequest(http.MethodGet, "/{id}", nil)
+		req = httptest.NewRequest(http.MethodGet, "/{id}", nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", key)
-		r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 		w = httptest.NewRecorder()
-		urlHandler.HandleGet(w, r)
+		urlHandler.HandleGet(w, req)
 		res = w.Result()
 		assert.Equal(t, http.StatusTemporaryRedirect, res.StatusCode)
 		assert.Equal(t, requestBody, res.Header.Get("Location"))
