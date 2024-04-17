@@ -24,9 +24,12 @@ func NewURLHandler(urlService *shorten.URLService, cfg *configuration.Config) *U
 
 func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
-	url, err := url.Parse(string(b))
 	if err != nil {
-		fmt.Println("invalid url: ", url)
+		fmt.Println("error during parsing body", err.Error())
+	}
+	_, err = url.Parse(string(b))
+	if err != nil {
+		fmt.Println("invalid url: ", err.Error())
 	}
 	val, err := h.urlService.CreateAndSave(string(b))
 	if err != nil {
