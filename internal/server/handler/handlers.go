@@ -25,15 +25,15 @@ func NewURLHandler(urlService *shorten.URLService, cfg *configuration.Config) *U
 func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
-		fmt.Println("error during parsing body", err.Error())
+		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 	_, err = url.Parse(string(b))
 	if err != nil {
-		fmt.Println("invalid url: ", err.Error())
+		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 	val, err := h.urlService.CreateAndSave(string(b))
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+		fmt.Println("error during creating hashL ", err.Error())
 	}
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
