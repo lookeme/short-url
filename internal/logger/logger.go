@@ -52,13 +52,44 @@ func (logger *Logger) Middleware(next http.Handler) http.Handler {
 		start := time.Now()
 		uri := r.RequestURI
 		method := r.Method
-		next.ServeHTTP(w, r)
+		responseData := &responseData{
+			status: 0,
+			size:   0,
+		}
+		lw := loggingResponseWriter{
+			ResponseWriter: w,
+			responseData:   responseData,
+		}
+		next.ServeHTTP(&lw, r)
 		duration := time.Since(start)
 		logger.Log.Info("shorten path service ",
 			zap.String("uri", uri),
 			zap.String("method", method),
 			zap.Duration("duration", duration),
+			zap.Int("status", responseData.status),
+			zap.Int("size", responseData.size),
 		)
 	}
 	return http.HandlerFunc(fn)
+}
+
+type responseData struct {
+	status int
+	size   int
+}
+
+type loggingResponseWriter struct {
+	http.ResponseWriter // встраиваем оригинальный http.ResponseWriter
+	responseData        *responseData
+}
+
+func (r *loggingResponseWriter) Write(b []byte) (int, error) {
+	size, err := r.ResponseWriter.Write(b)
+	r.responseData.size += size // захватываем размер
+	return size, err
+}
+
+func (r *loggingResponseWriter) WriteHeader(statusCode int) {
+	r.ResponseWriter.WriteHeader(statusCode)
+	r.responseData.status = statusCode // захватываем код статуса
 }
