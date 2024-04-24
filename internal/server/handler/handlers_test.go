@@ -37,10 +37,39 @@ func TestURLHandlerIndex(t *testing.T) {
 	if err != nil {
 		return
 	}
+
+	bodyReader := strings.NewReader(requestBody)
 	t.Run("handler test #1", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
+		req := httptest.NewRequest(http.MethodPost, "/", bodyReader)
 		w := httptest.NewRecorder()
 		urlHandler.HandlePOST(w, req)
+		res := w.Result()
+		assert.Equal(t, http.StatusCreated, res.StatusCode)
+		assert.Equal(t, "text/plain", res.Header.Get("Content-Type"))
+		responseBody, err := io.ReadAll(res.Body)
+		require.NoError(t, err)
+		assert.True(t, len(string(responseBody)) > 0)
+		url := strings.Split(string(responseBody), "/")
+		key := url[len(url)-1]
+		err = res.Body.Close()
+		require.NoError(t, err)
+		req = httptest.NewRequest(http.MethodGet, "/{id}", nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", key)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		w = httptest.NewRecorder()
+		urlHandler.HandleGet(w, req)
+		res = w.Result()
+		assert.Equal(t, http.StatusTemporaryRedirect, res.StatusCode)
+		assert.Equal(t, requestBody, res.Header.Get("Location"))
+		err = res.Body.Close()
+		require.NoError(t, err)
+	})
+
+	t.Run("handler test #2", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		urlHandler.HandleShorten(w, req)
 		res := w.Result()
 		assert.Equal(t, http.StatusCreated, res.StatusCode)
 		assert.Equal(t, "application/json", res.Header.Get("Content-Type"))
