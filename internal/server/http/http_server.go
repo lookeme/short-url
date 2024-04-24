@@ -18,6 +18,7 @@ type Server struct {
 func (s *Server) Serve() error {
 	r := chi.NewRouter()
 	r.Use(s.Logger.Middleware)
+	r.Post("/", s.Handler.HandlePOST)
 	r.Post("/api/shorten", s.Handler.HandlePOST)
 	r.Get("/{id}", s.Handler.HandleGet)
 	s.Logger.Log.Info("shorten url service ", zap.String("starting serving on ....", s.Config.ServerAddress))
