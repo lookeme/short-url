@@ -31,20 +31,21 @@ func TestURLHandlerIndex(t *testing.T) {
 	urlHandler := NewURLHandler(urlService, &cfg)
 	requestBody := "https://practicum.yandex.ru/"
 	req := models.Request{
-		Url: requestBody,
+		URL: requestBody,
 	}
 	body, err := json.Marshal(req)
 	if err != nil {
 		return
 	}
 	t.Run("handler test #1", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+		req := httptest.NewRequest(http.MethodPost, "/api/shorten", bytes.NewReader(body))
 		w := httptest.NewRecorder()
 		urlHandler.HandlePOST(w, req)
 		res := w.Result()
 		assert.Equal(t, http.StatusCreated, res.StatusCode)
 		assert.Equal(t, "application/json", res.Header.Get("Content-Type"))
 		responseBody, err := io.ReadAll(res.Body)
+		require.NoError(t, err)
 		response := models.Response{}
 		err = json.Unmarshal(responseBody, &response)
 		require.NoError(t, err)

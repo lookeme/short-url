@@ -30,11 +30,11 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	if err := json.Unmarshal(body, &request); err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
-	_, err := url.Parse(request.Url)
+	_, err := url.Parse(request.URL)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
-	val, err := h.urlService.CreateAndSave(request.Url)
+	val, err := h.urlService.CreateAndSave(request.URL)
 	if err != nil {
 		fmt.Println("error during creating hash ", err.Error())
 	}
@@ -44,7 +44,6 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	response := models.Response{
 		Result: result,
 	}
-
 	b, err := json.Marshal(response)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
