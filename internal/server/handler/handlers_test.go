@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
+	"github.com/lookeme/short-url/internal/models"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,18 +30,25 @@ func TestURLHandlerIndex(t *testing.T) {
 	urlService := shorten.NewURLService(storage)
 	urlHandler := NewURLHandler(urlService, &cfg)
 	requestBody := "https://practicum.yandex.ru/"
-	bodyReader := strings.NewReader(requestBody)
+	req := models.Request{
+		Url: requestBody,
+	}
+	body, err := json.Marshal(req)
+	if err != nil {
+		return
+	}
 	t.Run("handler test #1", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/", bodyReader)
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 		w := httptest.NewRecorder()
 		urlHandler.HandlePOST(w, req)
 		res := w.Result()
 		assert.Equal(t, http.StatusCreated, res.StatusCode)
-		assert.Equal(t, "text/plain", res.Header.Get("Content-Type"))
+		assert.Equal(t, "application/json", res.Header.Get("Content-Type"))
 		responseBody, err := io.ReadAll(res.Body)
+		response := models.Response{}
+		err = json.Unmarshal(responseBody, &response)
 		require.NoError(t, err)
-		assert.True(t, len(string(responseBody)) > 0)
-		url := strings.Split(string(responseBody), "/")
+		url := strings.Split(response.Result, "/")
 		key := url[len(url)-1]
 		err = res.Body.Close()
 		require.NoError(t, err)

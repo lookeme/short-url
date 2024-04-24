@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
+	"github.com/lookeme/short-url/internal/models"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,22 +25,31 @@ func NewURLHandler(urlService *shorten.URLService, cfg *configuration.Config) *U
 }
 
 func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
-	b, err := io.ReadAll(req.Body)
+	var request models.Request
+	body, _ := io.ReadAll(req.Body)
+	if err := json.Unmarshal(body, &request); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	_, err := url.Parse(request.Url)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
-	_, err = url.Parse(string(b))
+	val, err := h.urlService.CreateAndSave(request.Url)
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+		fmt.Println("error during creating hash ", err.Error())
 	}
-	val, err := h.urlService.CreateAndSave(string(b))
-	if err != nil {
-		fmt.Println("error during creating hashL ", err.Error())
-	}
-	res.Header().Set("content-type", "text/plain")
+	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
-	url := fmt.Sprintf("%s/%s", h.cfg.BaseURL, val)
-	_, err = res.Write([]byte(url))
+	result := fmt.Sprintf("%s/%s", h.cfg.BaseURL, val)
+	response := models.Response{
+		Result: result,
+	}
+
+	b, err := json.Marshal(response)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	_, err = res.Write(b)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
