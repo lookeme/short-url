@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/lookeme/short-url/internal/compression"
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/server/handler"
@@ -10,17 +11,35 @@ import (
 )
 
 type Server struct {
-	Handler *handler.URLHandler
-	Config  *configuration.NetworkCfg
-	Logger  *logger.Logger
+	handler *handler.URLHandler
+	config  *configuration.NetworkCfg
+	logger  *logger.Logger
+	gzip    *compression.Compressor
+}
+
+func NewServer(
+	handler *handler.URLHandler,
+	cfg *configuration.NetworkCfg,
+	logger *logger.Logger,
+	compressor *compression.Compressor,
+) *Server {
+	return &Server{
+		handler: handler,
+		config:  cfg,
+		logger:  logger,
+		gzip:    compressor,
+	}
 }
 
 func (s *Server) Serve() error {
 	r := chi.NewRouter()
-	r.Use(s.Logger.Middleware)
-	r.Post("/", s.Handler.HandlePOST)
-	r.Post("/api/shorten", s.Handler.HandleShorten)
-	r.Get("/{id}", s.Handler.HandleGet)
-	s.Logger.Log.Info("shorten url service ", zap.String("starting serving on ....", s.Config.ServerAddress))
-	return http.ListenAndServe(s.Config.ServerAddress, r)
+	r.Use(s.logger.Middleware)
+	r.Use(func(h http.Handler) http.Handler {
+		return s.gzip.GzipMiddleware(h)
+	})
+	r.Post("/", s.handler.HandlePOST)
+	r.Post("/api/shorten", s.handler.HandleShorten)
+	r.Get("/{id}", s.handler.HandleGet)
+	s.logger.Log.Info("shorten url service ", zap.String("starting serving on ....", s.config.ServerAddress))
+	return http.ListenAndServe(s.config.ServerAddress, r)
 }
