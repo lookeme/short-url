@@ -14,7 +14,7 @@ type Response struct {
 }
 
 type ShortenData struct {
-	ID          uuid.UUID `json:"uuid,string,omitempty"`
+	ID          uuid.UUID `json:"uuid,omitempty"`
 	ShortURL    string    `json:"short_url"`
 	OriginalURL string    `json:"original_url"`
 }
