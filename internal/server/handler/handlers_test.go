@@ -7,10 +7,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/configuration"
+	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/models"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -26,9 +28,18 @@ func TestURLHandlerIndex(t *testing.T) {
 	cfg := configuration.Config{
 		Network: &netCfg,
 	}
-	storage := inmemory.NewStorage()
-	urlService := shorten.NewURLService(storage)
-	urlHandler := NewURLHandler(urlService, &cfg)
+
+	stCfg := configuration.Storage{
+		FileStoragePath: "/tmp/short-url-db.json",
+	}
+
+	log, _ := zap.NewDevelopment()
+	zlog := logger.Logger{
+		Log: log,
+	}
+	storage, _ := inmemory.NewStorage(&stCfg, &zlog)
+	urlService := shorten.NewURLService(storage, &cfg)
+	urlHandler := NewURLHandler(urlService)
 	requestBody := "https://practicum.yandex.ru/"
 	req := models.Request{
 		URL: requestBody,

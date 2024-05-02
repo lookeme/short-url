@@ -40,6 +40,7 @@ func (s *Server) Serve() error {
 	r.Post("/", s.handler.HandlePOST)
 	r.Post("/api/shorten", s.handler.HandleShorten)
 	r.Get("/{id}", s.handler.HandleGet)
+	r.Get("/api/user/urls", s.handler.HandleUserURLs)
 	s.logger.Log.Info("shorten url service ", zap.String("starting serving on ....", s.config.ServerAddress))
 	return http.ListenAndServe(s.config.ServerAddress, r)
 }

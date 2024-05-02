@@ -23,10 +23,17 @@ func run(cfg *configuration.Config) error {
 	if err != nil {
 		return err
 	}
-	storage := inmemory.NewStorage()
-	urlService := shorten.NewURLService(storage)
-	urlHandler := handler.NewURLHandler(urlService, cfg)
+	storage, err := inmemory.NewStorage(cfg.Storage, zlogger)
+	if err != nil {
+		return err
+	}
+	if err := storage.RecoverFromFile(); err != nil {
+		return err
+	}
+	urlService := shorten.NewURLService(storage, cfg)
+	urlHandler := handler.NewURLHandler(urlService)
 	gzip := &compression.Compressor{}
 	server := http.NewServer(urlHandler, cfg.Network, zlogger, gzip)
+	defer storage.Close()
 	return server.Serve()
 }
