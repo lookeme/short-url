@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/compression"
 	"github.com/lookeme/short-url/internal/configuration"
@@ -8,11 +10,10 @@ import (
 	"github.com/lookeme/short-url/internal/server/handler"
 	"github.com/lookeme/short-url/internal/server/http"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
-	"log"
 )
 
 func main() {
-	cfg := configuration.CreateConfig()
+	cfg := configuration.New()
 	if err := run(cfg); err != nil {
 		log.Fatal(err)
 	}
@@ -31,9 +32,9 @@ func run(cfg *configuration.Config) error {
 		return err
 	}
 	urlService := shorten.NewURLService(storage, cfg)
-	urlHandler := handler.NewURLHandler(urlService)
-	gzip := &compression.Compressor{}
-	server := http.NewServer(urlHandler, cfg.Network, zlogger, gzip)
+	urlHandler := handler.NewURLHandler(&urlService)
+	var gzip compression.Compressor
+	server := http.NewServer(urlHandler, cfg.Network, zlogger, &gzip)
 	defer storage.Close()
 	return server.Serve()
 }

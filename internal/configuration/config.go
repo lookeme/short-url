@@ -23,7 +23,7 @@ type Storage struct {
 	FileStoragePath string `yaml:"address"`
 }
 
-func CreateConfig() *Config {
+func New() *Config {
 	networkCfg := NetworkCfg{}
 	loggerCfg := LoggerCfg{}
 	storageCfg := Storage{}

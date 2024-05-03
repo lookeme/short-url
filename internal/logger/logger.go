@@ -2,11 +2,13 @@ package logger
 
 import (
 	"errors"
-	"github.com/lookeme/short-url/internal/configuration"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+
+	"github.com/lookeme/short-url/internal/configuration"
 )
 
 type Logger struct {

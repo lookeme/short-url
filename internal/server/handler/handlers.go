@@ -3,12 +3,14 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/lookeme/short-url/internal/app/domain/shorten"
-	"github.com/lookeme/short-url/internal/models"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/lookeme/short-url/internal/app/domain/shorten"
+	"github.com/lookeme/short-url/internal/models"
 )
 
 type URLHandler struct {

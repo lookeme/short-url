@@ -4,20 +4,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
-	"github.com/lookeme/short-url/internal/app/domain/shorten"
-	"github.com/lookeme/short-url/internal/configuration"
-	"github.com/lookeme/short-url/internal/logger"
-	"github.com/lookeme/short-url/internal/models"
-	"github.com/lookeme/short-url/internal/storage/inmemory"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+
+	"github.com/lookeme/short-url/internal/app/domain/shorten"
+	"github.com/lookeme/short-url/internal/configuration"
+	"github.com/lookeme/short-url/internal/logger"
+	"github.com/lookeme/short-url/internal/models"
+	"github.com/lookeme/short-url/internal/storage/inmemory"
 )
 
 func TestURLHandlerIndex(t *testing.T) {
@@ -37,9 +39,10 @@ func TestURLHandlerIndex(t *testing.T) {
 	zlog := logger.Logger{
 		Log: log,
 	}
-	storage, _ := inmemory.NewStorage(&stCfg, &zlog)
+	storage, err := inmemory.NewStorage(&stCfg, &zlog)
+	require.NoError(t, err)
 	urlService := shorten.NewURLService(storage, &cfg)
-	urlHandler := NewURLHandler(urlService)
+	urlHandler := NewURLHandler(&urlService)
 	requestBody := "https://practicum.yandex.ru/"
 	req := models.Request{
 		URL: requestBody,

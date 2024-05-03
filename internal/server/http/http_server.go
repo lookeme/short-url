@@ -1,13 +1,15 @@
 package http
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
+
 	"github.com/lookeme/short-url/internal/compression"
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/server/handler"
-	"go.uber.org/zap"
-	"net/http"
 )
 
 type Server struct {

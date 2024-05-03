@@ -3,12 +3,14 @@ package inmemory
 import (
 	"bufio"
 	"encoding/json"
+	"os"
+	"sync"
+
+	"go.uber.org/zap"
+
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/models"
-	"go.uber.org/zap"
-	"os"
-	"sync"
 )
 
 type Storage struct {

@@ -2,6 +2,7 @@ package shorten
 
 import (
 	"fmt"
+
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/models"
 	"github.com/lookeme/short-url/internal/storage"
@@ -13,8 +14,8 @@ type URLService struct {
 	cfg               *configuration.Config
 }
 
-func NewURLService(repository storage.Repository, cfg *configuration.Config) *URLService {
-	return &URLService{
+func NewURLService(repository storage.Repository, cfg *configuration.Config) URLService {
+	return URLService{
 		shortenRepository: repository,
 		cfg:               cfg,
 	}
@@ -48,10 +49,12 @@ func (s *URLService) FindAll() ([]models.ShortenData, error) {
 		return result, err
 	}
 	for _, v := range data {
-		result = append(result, models.ShortenData{
-			ShortURL:    fmt.Sprintf("%s/%s", s.cfg.Network.BaseURL, v[0]),
-			OriginalURL: v[1],
-		})
+		if len(v) == 2 {
+			result = append(result, models.ShortenData{
+				ShortURL:    fmt.Sprintf("%s/%s", s.cfg.Network.BaseURL, v[0]),
+				OriginalURL: v[1],
+			})
+		}
 	}
 	return result, nil
 }
