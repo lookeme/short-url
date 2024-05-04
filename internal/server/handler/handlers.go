@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -70,6 +71,15 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
+}
+
+func (h *URLHandler) HandlePing(res http.ResponseWriter, _ *http.Request) {
+	ctx := context.Background()
+	err := h.urlService.Ping(ctx)
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+	}
+	res.WriteHeader(http.StatusOK)
 }
 
 func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
