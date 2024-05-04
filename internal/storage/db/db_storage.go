@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/logger"
@@ -41,7 +42,7 @@ func (s *Storage) Ping(ctx context.Context) error {
 }
 
 func NewDBStorage(ctx context.Context, log *logger.Logger, cfg *configuration.Storage) (*Storage, error) {
-	log.Log.Info("creating pool of conn to db...")
+	log.Log.Info("creating pool of conn to db...", zap.String("connString", cfg.ConnString))
 	connPool, err := pgxpool.New(ctx, cfg.ConnString)
 	if err != nil {
 		return nil, err
