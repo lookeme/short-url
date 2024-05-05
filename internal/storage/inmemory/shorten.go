@@ -23,6 +23,7 @@ type Storage struct {
 }
 
 func NewStorage(cfg *configuration.Storage, logger *logger.Logger) (*Storage, error) {
+	logger.Log.Info("Creating local storage")
 	file, err := os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, err
@@ -100,6 +101,6 @@ func (s *Storage) RecoverFromFile() error {
 	return nil
 }
 
-func (s *Storage) Close() {
-	s.file.Close()
+func (s *Storage) Close() error {
+	return s.file.Close()
 }

@@ -19,7 +19,6 @@ import (
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/models"
-	"github.com/lookeme/short-url/internal/storage/db"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 )
 
@@ -42,7 +41,7 @@ func TestURLHandlerIndex(t *testing.T) {
 	}
 	storage, err := inmemory.NewStorage(&stCfg, &zlog)
 	require.NoError(t, err)
-	urlService := shorten.NewURLService(storage, &db.Storage{}, &cfg)
+	urlService := shorten.NewURLService(storage, &cfg)
 	urlHandler := NewURLHandler(&urlService)
 	requestBody := "https://practicum.yandex.ru/"
 	req := models.Request{

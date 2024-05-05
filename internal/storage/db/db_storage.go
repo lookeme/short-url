@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -9,53 +10,100 @@ import (
 
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/logger"
+	"github.com/lookeme/short-url/internal/models"
 )
 
-type Storage struct {
+var (
+	pgInstance *Postgres
+	pgOnce     sync.Once
+)
+
+type Postgres struct {
 	connPool *pgxpool.Pool
 	log      *logger.Logger
-	connStr  string
 }
 
-func (s *Storage) Close() {
-	s.connPool.Close()
-}
-
-func (s *Storage) Save(key, value string) error {
+func (pg *Postgres) Close() error {
+	pg.connPool.Close()
 	return nil
 }
-func (s *Storage) FindByURL(key string) (string, bool) {
-	return "", false
-}
-func (s *Storage) FindByKey(key string) (string, bool) {
-	return "", false
-}
-func (s *Storage) FindAll() ([][]string, error) {
-	return nil, nil
-}
 
-func (s *Storage) Ping(ctx context.Context) error {
-	//connection, err := s.connPool.Acquire(ctx)
-	//defer connection.Release()
-	//if err != nil {
-	//	return err
-	//}
-	//return s.connPool.Ping(ctx)
-	conn, err := pgx.Connect(context.Background(), s.connStr)
-
+func (pg *Postgres) Save(key, value string) error {
+	query := `INSERT INTO short (original_url, short_url) VALUES (@originalURL, @shortURL)`
+	args := pgx.NamedArgs{
+		"originalURL": value,
+		"shortURL":    key,
+	}
+	_, err := pg.connPool.Exec(context.Background(), query, args)
 	if err != nil {
-		s.log.Log.Error(err.Error())
 		return err
 	}
-	defer conn.Close(ctx)
-	return conn.Ping(ctx)
+	return nil
 }
-
-func NewDBStorage(ctx context.Context, log *logger.Logger, cfg *configuration.Storage) (*Storage, error) {
-	log.Log.Info("creating pool of conn to db...", zap.String("connString", cfg.ConnString))
-	connPool, err := pgxpool.New(ctx, cfg.ConnString)
+func (pg *Postgres) FindByURL(key string) (string, bool) {
+	query := `SELECT id, short_url, original_url FROM short WHERE original_url = @originalURL`
+	args := pgx.NamedArgs{
+		"originalURL": key,
+	}
+	var data = models.ShortenData{}
+	rows := pg.connPool.QueryRow(context.Background(), query, args)
+	err := rows.Scan(&data)
+	if err != nil {
+		pg.log.Log.Error(err.Error(), zap.String("during fetching by url", key))
+		return "", false
+	}
+	return data.ShortURL, true
+}
+func (pg *Postgres) FindByKey(key string) (string, bool) {
+	query := `SELECT id, short_url, original_url  FROM short WHERE short_url = @shortURL`
+	args := pgx.NamedArgs{
+		"shortURL": key,
+	}
+	rows, err := pg.connPool.Query(context.Background(), query, args)
+	if err != nil {
+		pg.log.Log.Error(err.Error(), zap.String("during fetching by short key", key))
+		return "", false
+	}
+	data, err := pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.ShortenData])
+	if err != nil {
+		pg.log.Log.Error(err.Error(), zap.String("during fetching by short key", key))
+		return "", false
+	}
+	return data.OriginalURL, true
+}
+func (pg *Postgres) FindAll() ([][]string, error) {
+	query := `SELECT id, short_url, original_url  FROM short ORDER BY date_create DESC`
+	rows, err := pg.connPool.Query(context.Background(), query)
 	if err != nil {
 		return nil, err
 	}
-	return &Storage{connPool: connPool, log: log, connStr: cfg.ConnString}, nil
+	urls, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.ShortenData])
+	if err != nil {
+		return nil, err
+	}
+	result := make([][]string, len(urls))
+	for i, val := range urls {
+		result[i] = []string{val.ShortURL, val.OriginalURL}
+	}
+	return result, nil
+}
+
+func (pg *Postgres) Ping(ctx context.Context) error {
+	return pg.connPool.Ping(ctx)
+}
+
+func New(ctx context.Context, log *logger.Logger, cfg *configuration.Storage) (*Postgres, error) {
+	log.Log.Info("creating pool of conn to db...", zap.String("connString", cfg.ConnString))
+	pgOnce.Do(func() {
+		db, err := pgxpool.New(ctx, cfg.ConnString)
+		if err != nil {
+			log.Log.Error(err.Error())
+		}
+		pgInstance = &Postgres{db, log}
+	})
+	err := StartMigration(pgInstance.connPool)
+	if err != nil {
+		return nil, err
+	}
+	return pgInstance, nil
 }

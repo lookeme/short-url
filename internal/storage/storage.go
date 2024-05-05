@@ -5,4 +5,5 @@ type Repository interface {
 	FindByURL(key string) (string, bool)
 	FindByKey(key string) (string, bool)
 	FindAll() ([][]string, error)
+	Close() error
 }

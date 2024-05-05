@@ -35,7 +35,7 @@ func New() *Config {
 	flag.StringVar(&networkCfg.BaseURL, "b", "http://localhost:8080", "base address")
 	flag.StringVar(&loggerCfg.Level, "l", "info", "logger level")
 	flag.StringVar(&storageCfg.FileStoragePath, "f", "/tmp/short-url-db.json", "file to store data")
-	flag.StringVar(&storageCfg.ConnString, "d", "postgres://20785422@localhost:5432/shorten", "file to store data")
+	flag.StringVar(&storageCfg.ConnString, "d", "", "file to store data")
 
 	flag.Parse()
 	if serverAddress := os.Getenv("SERVER_ADDRESS"); serverAddress != "" {

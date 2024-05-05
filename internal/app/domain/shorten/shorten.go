@@ -7,20 +7,17 @@ import (
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/models"
 	"github.com/lookeme/short-url/internal/storage"
-	"github.com/lookeme/short-url/internal/storage/db"
 	"github.com/lookeme/short-url/internal/utils"
 )
 
 type URLService struct {
 	shortenRepository storage.Repository
-	dbRepository      *db.Storage
 	cfg               *configuration.Config
 }
 
-func NewURLService(repository storage.Repository, dbRepository *db.Storage, cfg *configuration.Config) URLService {
+func NewURLService(repository storage.Repository, cfg *configuration.Config) URLService {
 	return URLService{
 		shortenRepository: repository,
-		dbRepository:      dbRepository,
 		cfg:               cfg,
 	}
 }
@@ -64,5 +61,5 @@ func (s *URLService) FindAll() ([]models.ShortenData, error) {
 }
 
 func (s *URLService) Ping(ctx context.Context) error {
-	return s.dbRepository.Ping(ctx)
+	return nil
 }
