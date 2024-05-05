@@ -90,7 +90,7 @@ func (s *Storage) RecoverFromFile() error {
 		shorten := models.ShortenData{}
 		b := sc.Bytes()
 		if err := json.Unmarshal(b, &shorten); err != nil {
-			return err
+			s.log.Log.Error(err.Error(), zap.String("shorten :", shorten.String()))
 		}
 		s.log.Log.Info("writing ...", zap.String("shorten :", shorten.String()))
 		if err := s.Save(shorten.ShortURL, shorten.OriginalURL); err != nil {
