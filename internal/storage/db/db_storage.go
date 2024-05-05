@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
@@ -13,6 +14,7 @@ import (
 type Storage struct {
 	connPool *pgxpool.Pool
 	log      *logger.Logger
+	connStr  string
 }
 
 func (s *Storage) Close() {
@@ -33,12 +35,20 @@ func (s *Storage) FindAll() ([][]string, error) {
 }
 
 func (s *Storage) Ping(ctx context.Context) error {
-	connection, err := s.connPool.Acquire(ctx)
-	defer connection.Release()
+	//connection, err := s.connPool.Acquire(ctx)
+	//defer connection.Release()
+	//if err != nil {
+	//	return err
+	//}
+	//return s.connPool.Ping(ctx)
+	conn, err := pgx.Connect(context.Background(), s.connStr)
+
 	if err != nil {
+		s.log.Log.Error(err.Error())
 		return err
 	}
-	return s.connPool.Ping(context.Background())
+	defer conn.Close(ctx)
+	return conn.Ping(ctx)
 }
 
 func NewDBStorage(ctx context.Context, log *logger.Logger, cfg *configuration.Storage) (*Storage, error) {
@@ -47,5 +57,5 @@ func NewDBStorage(ctx context.Context, log *logger.Logger, cfg *configuration.St
 	if err != nil {
 		return nil, err
 	}
-	return &Storage{connPool: connPool, log: log}, nil
+	return &Storage{connPool: connPool, log: log, connStr: cfg.ConnString}, nil
 }
