@@ -1,7 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE short(
-    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    id SERIAL,
+    correlation_id uuid NOT NULL DEFAULT gen_random_uuid (),
     original_url text,
     short_url  text,
     date_create TIMESTAMP DEFAULT NOW(),

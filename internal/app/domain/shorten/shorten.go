@@ -36,30 +36,66 @@ func (s *URLService) CreateAndSave(originURL string) (string, error) {
 	}
 }
 
-func (s *URLService) FindByURL(key string) (string, bool) {
-	return s.shortenRepository.FindByURL(key)
-}
-
-func (s *URLService) FindByKey(key string) (string, bool) {
-	return s.shortenRepository.FindByKey(key)
-}
-func (s *URLService) FindAll() ([]models.ShortenData, error) {
-	var result []models.ShortenData
-	data, err := s.shortenRepository.FindAll()
+func (s *URLService) CreateAndSaveBatch(urls []models.BatchRequest) ([]models.BatchResponse, error) {
+	shortenData, err := s.FindByURLs(urls)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
-	for _, v := range data {
-		if len(v) == 2 {
-			result = append(result, models.ShortenData{
-				ShortURL:    fmt.Sprintf("%s/%s", s.cfg.Network.BaseURL, v[0]),
-				OriginalURL: v[1],
-			})
+	var dataToSave []models.ShortenData
+	for _, url := range urls {
+		if !utils.Contains(shortenData, url.OriginalURL) {
+			token := utils.NewShortToken(7)
+			key := token.Get()
+			shorten := models.ShortenData{OriginalURL: url.OriginalURL, ShortURL: key}
+			shorten.CorrelationID = url.CorrelationID
+			dataToSave = append(dataToSave, shorten)
 		}
+	}
+	err = s.shortenRepository.SaveAll(dataToSave)
+	if err != nil {
+		return nil, err
+	}
+	var result []models.BatchResponse
+	for _, shorten := range dataToSave {
+		r := models.BatchResponse{
+			CorrelationID: shorten.CorrelationID,
+			ShortURL:      shorten.ShortURL,
+		}
+		result = append(result, r)
 	}
 	return result, nil
 }
 
-func (s *URLService) Ping(ctx context.Context) error {
+func (s *URLService) FindByURL(key string) (string, bool) {
+	shorten, ok := s.shortenRepository.FindByURL(key)
+	if !ok {
+		return "", false
+	}
+	return shorten.ShortURL, true
+}
+func (s *URLService) FindByURLs(urls []models.BatchRequest) ([]models.ShortenData, error) {
+	var keys []string
+	for _, url := range urls {
+		keys = append(keys, url.OriginalURL)
+	}
+	return s.shortenRepository.FindByURLs(keys)
+}
+
+func (s *URLService) FindByKey(key string) (string, bool) {
+	shorten, ok := s.shortenRepository.FindByKey(key)
+	if !ok {
+		return "", false
+	}
+	return shorten.OriginalURL, ok
+}
+func (s *URLService) FindAll() ([]models.ShortenData, error) {
+	result, err := s.shortenRepository.FindAll()
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func (s *URLService) Ping(_ context.Context) error {
 	return nil
 }

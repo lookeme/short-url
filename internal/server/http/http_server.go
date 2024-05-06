@@ -41,6 +41,7 @@ func (s *Server) Serve() error {
 	})
 	r.Post("/", s.handler.HandlePOST)
 	r.Post("/api/shorten", s.handler.HandleShorten)
+	r.Post("/api/shorten/batch", s.handler.HandleShortenBatch)
 	r.Get("/{id}", s.handler.HandleGet)
 	r.Get("/ping", s.handler.HandlePing)
 	r.Get("/api/user/urls", s.handler.HandleUserURLs)

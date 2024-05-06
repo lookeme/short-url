@@ -40,52 +40,94 @@ func (pg *Postgres) Save(key, value string) error {
 	}
 	return nil
 }
-func (pg *Postgres) FindByURL(key string) (string, bool) {
-	query := `SELECT id, short_url, original_url FROM short WHERE original_url = @originalURL`
+func (pg *Postgres) FindByURL(key string) (models.ShortenData, bool) {
+	query := `SELECT id, correlation_id, short_url, original_url FROM short WHERE original_url = @originalURL`
 	args := pgx.NamedArgs{
 		"originalURL": key,
 	}
-	var data = models.ShortenData{}
-	rows := pg.connPool.QueryRow(context.Background(), query, args)
-	err := rows.Scan(&data)
+	var data models.ShortenData
+	row, err := pg.connPool.Query(context.Background(), query, args)
+	if err != nil {
+		return data, false
+	}
+	data, err = pgx.CollectOneRow(row, pgx.RowToStructByPos[models.ShortenData])
 	if err != nil {
 		pg.log.Log.Error(err.Error(), zap.String("during fetching by url", key))
-		return "", false
+		return data, false
 	}
-	return data.ShortURL, true
+	return data, true
 }
-func (pg *Postgres) FindByKey(key string) (string, bool) {
-	query := `SELECT id, short_url, original_url  FROM short WHERE short_url = @shortURL`
+
+func (pg *Postgres) FindByURLs(keys []string) ([]models.ShortenData, error) {
+	query := `SELECT id, short_url, original_url, correlation_id FROM short WHERE original_url = ANY (@originalURL)`
 	args := pgx.NamedArgs{
-		"shortURL": key,
+		"originalURL": keys,
 	}
 	rows, err := pg.connPool.Query(context.Background(), query, args)
 	if err != nil {
-		pg.log.Log.Error(err.Error(), zap.String("during fetching by short key", key))
-		return "", false
+		return nil, err
 	}
-	data, err := pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.ShortenData])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.ShortenData])
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+func (pg *Postgres) FindByKey(key string) (models.ShortenData, bool) {
+	query := `SELECT id, correlation_id, short_url, original_url  FROM short WHERE short_url = @shortURL`
+	args := pgx.NamedArgs{
+		"shortURL": key,
+	}
+	row, err := pg.connPool.Query(context.Background(), query, args)
 	if err != nil {
 		pg.log.Log.Error(err.Error(), zap.String("during fetching by short key", key))
-		return "", false
+		return models.ShortenData{}, false
 	}
-	return data.OriginalURL, true
+	data, err := pgx.CollectOneRow(row, pgx.RowToStructByPos[models.ShortenData])
+	if err != nil {
+		pg.log.Log.Error(err.Error(), zap.String("during fetching by short key", key))
+		return models.ShortenData{}, false
+	}
+	return data, true
 }
-func (pg *Postgres) FindAll() ([][]string, error) {
-	query := `SELECT id, short_url, original_url  FROM short ORDER BY date_create DESC`
+func (pg *Postgres) FindAll() ([]models.ShortenData, error) {
+	query := `SELECT id, short_url, original_url, correlation_id  FROM short ORDER BY date_create DESC`
 	rows, err := pg.connPool.Query(context.Background(), query)
 	if err != nil {
 		return nil, err
 	}
-	urls, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.ShortenData])
+	result, err := pgx.CollectRows(rows, pgx.RowToStructByName[models.ShortenData])
 	if err != nil {
 		return nil, err
 	}
-	result := make([][]string, len(urls))
-	for i, val := range urls {
-		result[i] = []string{val.ShortURL, val.OriginalURL}
-	}
+
 	return result, nil
+}
+
+func (pg *Postgres) SaveAll(urls []models.ShortenData) error {
+	if len(urls) == 0 {
+		return nil
+	}
+	ctx := context.Background()
+	tx, err := pg.connPool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	for _, url := range urls {
+		query := `INSERT INTO short (original_url, short_url, correlation_id) VALUES (@originalURL, @shortURL, @correlationId)`
+		args := pgx.NamedArgs{
+			"originalURL":   url.OriginalURL,
+			"shortURL":      url.ShortURL,
+			"correlationId": url.CorrelationID,
+		}
+		_, err := tx.Exec(ctx, query, args)
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}
+	tx.Commit(ctx)
+	return nil
 }
 
 func (pg *Postgres) Ping(ctx context.Context) error {

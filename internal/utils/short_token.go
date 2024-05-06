@@ -9,6 +9,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+
+	"github.com/lookeme/short-url/internal/models"
 )
 
 // ShortToken - interface for short token creation
@@ -57,4 +59,13 @@ func (s *shortToken) Check(sToken string) error {
 		return errors.New("wrong token alphabet")
 	}
 	return nil
+}
+
+func Contains(data []models.ShortenData, key string) bool {
+	for _, d := range data {
+		if d.OriginalURL == key {
+			return true
+		}
+	}
+	return false
 }

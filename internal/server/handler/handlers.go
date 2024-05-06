@@ -126,3 +126,28 @@ func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 }
+
+func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Request) {
+	var request []models.BatchRequest
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	if err := json.Unmarshal(body, &request); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	val, err := h.urlService.CreateAndSaveBatch(request)
+	if err != nil {
+		fmt.Println("error during creating hash ", err.Error())
+	}
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
+	b, err := json.Marshal(val)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	_, err = res.Write(b)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+}
