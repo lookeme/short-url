@@ -75,6 +75,7 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	}
 	url := string(b)
 	val, err := h.urlService.CreateAndSave(url)
+	res.Header().Set("content-type", "text/plain")
 	if err != nil {
 		h.urlService.Log.Log.Error(err.Error())
 		code := utils.ErrorCode(err)
@@ -93,7 +94,6 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		h.urlService.Log.Log.Error(err.Error())
 	}
-	res.Header().Set("content-type", "text/plain")
 	_, err = res.Write([]byte(val))
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
