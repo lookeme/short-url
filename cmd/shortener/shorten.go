@@ -28,27 +28,27 @@ func run(ctx context.Context, cfg *configuration.Config) error {
 	if err != nil {
 		return err
 	}
-	storage, err := createStorage(ctx, zlogger, cfg.Storage)
+	store, err := createStorage(ctx, zlogger, cfg.Storage)
 	if err != nil {
 		return err
 	}
-	urlService := shorten.NewURLService(storage, cfg)
+	urlService := shorten.NewURLService(store, zlogger, cfg)
 	urlHandler := handler.NewURLHandler(&urlService)
 	var gzip compression.Compressor
 	server := http.NewServer(urlHandler, cfg.Network, zlogger, &gzip)
-	defer storage.Close()
+	defer store.Close()
 	return server.Serve()
 }
 
 func createStorage(ctx context.Context, log *logger.Logger, cfg *configuration.Storage) (storage.Repository, error) {
 	if len(cfg.ConnString) == 0 {
-		storage, err := inmemory.NewStorage(cfg, log)
+		store, err := inmemory.NewStorage(cfg, log)
 		if err != nil {
-			if err := storage.RecoverFromFile(); err != nil {
+			if err := store.RecoverFromFile(); err != nil {
 				return nil, err
 			}
 		}
-		return storage, err
+		return store, err
 	}
 	return db.New(ctx, log, cfg)
 }

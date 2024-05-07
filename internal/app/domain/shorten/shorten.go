@@ -2,9 +2,8 @@ package shorten
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/lookeme/short-url/internal/configuration"
+	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/models"
 	"github.com/lookeme/short-url/internal/storage"
 	"github.com/lookeme/short-url/internal/utils"
@@ -13,26 +12,28 @@ import (
 type URLService struct {
 	shortenRepository storage.Repository
 	cfg               *configuration.Config
+	log               *logger.Logger
 }
 
-func NewURLService(repository storage.Repository, cfg *configuration.Config) URLService {
+func NewURLService(repository storage.Repository, log *logger.Logger, cfg *configuration.Config) URLService {
 	return URLService{
 		shortenRepository: repository,
 		cfg:               cfg,
+		log:               log,
 	}
 }
 
 func (s *URLService) CreateAndSave(originURL string) (string, error) {
-	key, ok := s.FindByURL(originURL)
+	shorten, ok := s.FindByURL(originURL)
 	if !ok {
 		token := utils.NewShortToken(7)
-		key = token.Get()
-		if err := s.shortenRepository.Save(key, originURL); err != nil {
+		key := token.Get()
+		if err := s.shortenRepository.Save(utils.CreateShortURL(key, s.cfg.Network.BaseURL), originURL); err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("%s/%s", s.cfg.Network.BaseURL, key), nil
+		return utils.CreateShortURL(key, s.cfg.Network.BaseURL), nil
 	} else {
-		return fmt.Sprintf("%s/%s", s.cfg.Network.BaseURL, key), nil
+		return shorten.ShortURL, nil
 	}
 }
 
@@ -46,7 +47,10 @@ func (s *URLService) CreateAndSaveBatch(urls []models.BatchRequest) ([]models.Ba
 		if !utils.Contains(shortenData, url.OriginalURL) {
 			token := utils.NewShortToken(7)
 			key := token.Get()
-			shorten := models.ShortenData{OriginalURL: url.OriginalURL, ShortURL: key}
+			shorten := models.ShortenData{
+				OriginalURL: url.OriginalURL,
+				ShortURL:    utils.CreateShortURL(key, s.cfg.Network.BaseURL),
+			}
 			shorten.CorrelationID = url.CorrelationID
 			dataToSave = append(dataToSave, shorten)
 		}
@@ -66,12 +70,12 @@ func (s *URLService) CreateAndSaveBatch(urls []models.BatchRequest) ([]models.Ba
 	return result, nil
 }
 
-func (s *URLService) FindByURL(key string) (string, bool) {
+func (s *URLService) FindByURL(key string) (*models.ShortenData, bool) {
 	shorten, ok := s.shortenRepository.FindByURL(key)
 	if !ok {
-		return "", false
+		return nil, false
 	}
-	return shorten.ShortURL, true
+	return &shorten, true
 }
 func (s *URLService) FindByURLs(urls []models.BatchRequest) ([]models.ShortenData, error) {
 	var keys []string
@@ -81,12 +85,13 @@ func (s *URLService) FindByURLs(urls []models.BatchRequest) ([]models.ShortenDat
 	return s.shortenRepository.FindByURLs(keys)
 }
 
-func (s *URLService) FindByKey(key string) (string, bool) {
-	shorten, ok := s.shortenRepository.FindByKey(key)
+func (s *URLService) FindByKey(key string) (*models.ShortenData, bool) {
+	shortURL := utils.CreateShortURL(key, s.cfg.Network.BaseURL)
+	shorten, ok := s.shortenRepository.FindByKey(shortURL)
 	if !ok {
-		return "", false
+		return nil, false
 	}
-	return shorten.OriginalURL, ok
+	return &shorten, ok
 }
 func (s *URLService) FindAll() ([]models.ShortenData, error) {
 	result, err := s.shortenRepository.FindAll()

@@ -84,16 +84,18 @@ func (h *URLHandler) HandlePing(res http.ResponseWriter, _ *http.Request) {
 
 func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
+	fmt.Println("ID", id)
 	if id == "" {
 		http.Error(res, "ID is not provided in path", http.StatusBadRequest)
 		return
 	}
 	val, ok := h.urlService.FindByKey(id)
+	fmt.Println("VALUE", val)
 	if !ok {
 		http.Error(res, "Value is not found", http.StatusBadRequest)
 		return
 	}
-	res.Header().Set("Location", val)
+	res.Header().Set("Location", val.OriginalURL)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 

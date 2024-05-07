@@ -69,3 +69,7 @@ func Contains(data []models.ShortenData, key string) bool {
 	}
 	return false
 }
+
+func CreateShortURL(key string, baseURL string) string {
+	return fmt.Sprintf("%s/%s", baseURL, key)
+}
