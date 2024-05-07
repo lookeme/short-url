@@ -9,7 +9,6 @@ CREATE TABLE short(
     PRIMARY KEY(id)
 );
 -- +goose StatementEnd
-
 -- +goose Down
 -- +goose StatementBegin
 SELECT 'down SQL query';

@@ -9,8 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-
-	"github.com/lookeme/short-url/internal/models"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // ShortToken - interface for short token creation
@@ -61,15 +60,15 @@ func (s *shortToken) Check(sToken string) error {
 	return nil
 }
 
-func Contains(data []models.ShortenData, key string) bool {
-	for _, d := range data {
-		if d.OriginalURL == key {
-			return true
-		}
-	}
-	return false
-}
-
 func CreateShortURL(key string, baseURL string) string {
 	return fmt.Sprintf("%s/%s", baseURL, key)
+}
+
+func ErrorCode(err error) string {
+	var pgerr *pgconn.PgError
+	ok := errors.As(err, &pgerr)
+	if !ok {
+		return ""
+	}
+	return pgerr.Code
 }

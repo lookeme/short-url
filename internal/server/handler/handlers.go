@@ -3,7 +3,8 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"github.com/jackc/pgerrcode"
+	"github.com/lookeme/short-url/internal/utils"
 	"io"
 	"net/http"
 	"net/url"
@@ -35,11 +36,22 @@ func (h *URLHandler) HandleShorten(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 	val, err := h.urlService.CreateAndSave(request.URL)
-	if err != nil {
-		fmt.Println("error during creating hash ", err.Error())
-	}
 	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(http.StatusCreated)
+	if err != nil {
+		h.urlService.Log.Log.Error(err.Error())
+		code := utils.ErrorCode(err)
+		if code == pgerrcode.UniqueViolation {
+			res.WriteHeader(http.StatusConflict)
+			data, ok := h.urlService.FindByURL(request.URL)
+			if !ok {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+			} else {
+				val = data.ShortURL
+			}
+		}
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
 	b, err := json.Marshal(models.Response{
 		Result: val,
 	})
@@ -61,12 +73,27 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
-	val, err := h.urlService.CreateAndSave(string(b))
+	url := string(b)
+	val, err := h.urlService.CreateAndSave(url)
 	if err != nil {
-		fmt.Println("error during creating hashL ", err.Error())
+		h.urlService.Log.Log.Error(err.Error())
+		code := utils.ErrorCode(err)
+		if code == pgerrcode.UniqueViolation {
+			res.WriteHeader(http.StatusConflict)
+			data, ok := h.urlService.FindByURL(url)
+			if !ok {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+			} else {
+				val = data.ShortURL
+			}
+		}
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
+	if err != nil {
+		h.urlService.Log.Log.Error(err.Error())
 	}
 	res.Header().Set("content-type", "text/plain")
-	res.WriteHeader(http.StatusCreated)
 	_, err = res.Write([]byte(val))
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
@@ -84,13 +111,11 @@ func (h *URLHandler) HandlePing(res http.ResponseWriter, _ *http.Request) {
 
 func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
-	fmt.Println("ID", id)
 	if id == "" {
 		http.Error(res, "ID is not provided in path", http.StatusBadRequest)
 		return
 	}
 	val, ok := h.urlService.FindByKey(id)
-	fmt.Println("VALUE", val)
 	if !ok {
 		http.Error(res, "Value is not found", http.StatusBadRequest)
 		return
@@ -106,12 +131,6 @@ func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, req *http.Request) 
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("URLS", urls)
-
-	fmt.Println("params", req.URL.String())
-
-	b1, _ := io.ReadAll(req.Body)
-	fmt.Println("body", string(b1))
 	if urls == nil {
 		res.WriteHeader(http.StatusNoContent)
 		return
@@ -140,7 +159,7 @@ func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Reque
 	}
 	val, err := h.urlService.CreateAndSaveBatch(request)
 	if err != nil {
-		fmt.Println("error during creating hash ", err.Error())
+		h.urlService.Log.Log.Error(err.Error())
 	}
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)

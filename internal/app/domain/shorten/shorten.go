@@ -12,50 +12,39 @@ import (
 type URLService struct {
 	shortenRepository storage.Repository
 	cfg               *configuration.Config
-	log               *logger.Logger
+	Log               *logger.Logger
 }
 
 func NewURLService(repository storage.Repository, log *logger.Logger, cfg *configuration.Config) URLService {
 	return URLService{
 		shortenRepository: repository,
 		cfg:               cfg,
-		log:               log,
+		Log:               log,
 	}
 }
 
 func (s *URLService) CreateAndSave(originURL string) (string, error) {
-	shorten, ok := s.FindByURL(originURL)
-	if !ok {
-		token := utils.NewShortToken(7)
-		key := token.Get()
-		if err := s.shortenRepository.Save(utils.CreateShortURL(key, s.cfg.Network.BaseURL), originURL); err != nil {
-			return "", err
-		}
-		return utils.CreateShortURL(key, s.cfg.Network.BaseURL), nil
-	} else {
-		return shorten.ShortURL, nil
+	token := utils.NewShortToken(7)
+	key := token.Get()
+	if err := s.shortenRepository.Save(utils.CreateShortURL(key, s.cfg.Network.BaseURL), originURL); err != nil {
+		return "", err
 	}
+	return utils.CreateShortURL(key, s.cfg.Network.BaseURL), nil
 }
 
 func (s *URLService) CreateAndSaveBatch(urls []models.BatchRequest) ([]models.BatchResponse, error) {
-	shortenData, err := s.FindByURLs(urls)
-	if err != nil {
-		return nil, err
-	}
 	var dataToSave []models.ShortenData
 	for _, url := range urls {
-		if !utils.Contains(shortenData, url.OriginalURL) {
-			token := utils.NewShortToken(7)
-			key := token.Get()
-			shorten := models.ShortenData{
-				OriginalURL: url.OriginalURL,
-				ShortURL:    utils.CreateShortURL(key, s.cfg.Network.BaseURL),
-			}
-			shorten.CorrelationID = url.CorrelationID
-			dataToSave = append(dataToSave, shorten)
+		token := utils.NewShortToken(7)
+		key := token.Get()
+		shorten := models.ShortenData{
+			OriginalURL: url.OriginalURL,
+			ShortURL:    utils.CreateShortURL(key, s.cfg.Network.BaseURL),
 		}
+		shorten.CorrelationID = url.CorrelationID
+		dataToSave = append(dataToSave, shorten)
 	}
-	err = s.shortenRepository.SaveAll(dataToSave)
+	err := s.shortenRepository.SaveAll(dataToSave)
 	if err != nil {
 		return nil, err
 	}

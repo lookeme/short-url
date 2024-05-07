@@ -121,13 +121,13 @@ func (pg *Postgres) SaveAll(urls []models.ShortenData) error {
 			"shortURL":      url.ShortURL,
 			"correlationId": url.CorrelationID,
 		}
-		_, err := tx.Exec(ctx, query, args)
+		_, err = tx.Exec(ctx, query, args)
 		if err != nil {
 			tx.Rollback(ctx)
 		}
 	}
 	tx.Commit(ctx)
-	return nil
+	return err
 }
 
 func (pg *Postgres) Ping(ctx context.Context) error {
