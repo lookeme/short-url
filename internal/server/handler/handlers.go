@@ -66,6 +66,7 @@ func (h *URLHandler) HandleShorten(res http.ResponseWriter, req *http.Request) {
 
 func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
+	defer req.Body.Close()
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
@@ -73,15 +74,15 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
-	url := string(b)
-	val, err := h.urlService.CreateAndSave(url)
+	urlToSave := string(b)
+	val, err := h.urlService.CreateAndSave(urlToSave)
 	res.Header().Set("content-type", "text/plain")
 	if err != nil {
 		h.urlService.Log.Log.Error(err.Error())
 		code := utils.ErrorCode(err)
 		if code == pgerrcode.UniqueViolation {
 			res.WriteHeader(http.StatusConflict)
-			data, ok := h.urlService.FindByURL(url)
+			data, ok := h.urlService.FindByURL(urlToSave)
 			if !ok {
 				http.Error(res, err.Error(), http.StatusBadRequest)
 			} else {
@@ -124,7 +125,7 @@ func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, req *http.Request) {
+func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, _ *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	urls, err := h.urlService.FindAll()
 	if err != nil {
@@ -151,6 +152,7 @@ func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, req *http.Request) 
 func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Request) {
 	var request []models.BatchRequest
 	body, err := io.ReadAll(req.Body)
+	defer req.Body.Close()
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}

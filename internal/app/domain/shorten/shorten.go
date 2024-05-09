@@ -59,12 +59,12 @@ func (s *URLService) CreateAndSaveBatch(urls []models.BatchRequest) ([]models.Ba
 	return result, nil
 }
 
-func (s *URLService) FindByURL(key string) (*models.ShortenData, bool) {
+func (s *URLService) FindByURL(key string) (models.ShortenData, bool) {
 	shorten, ok := s.shortenRepository.FindByURL(key)
 	if !ok {
-		return nil, false
+		return models.ShortenData{}, false
 	}
-	return &shorten, true
+	return shorten, true
 }
 func (s *URLService) FindByURLs(urls []models.BatchRequest) ([]models.ShortenData, error) {
 	var keys []string
@@ -74,13 +74,13 @@ func (s *URLService) FindByURLs(urls []models.BatchRequest) ([]models.ShortenDat
 	return s.shortenRepository.FindByURLs(keys)
 }
 
-func (s *URLService) FindByKey(key string) (*models.ShortenData, bool) {
+func (s *URLService) FindByKey(key string) (models.ShortenData, bool) {
 	shortURL := utils.CreateShortURL(key, s.cfg.Network.BaseURL)
 	shorten, ok := s.shortenRepository.FindByKey(shortURL)
 	if !ok {
-		return nil, false
+		return models.ShortenData{}, false
 	}
-	return &shorten, ok
+	return shorten, ok
 }
 func (s *URLService) FindAll() ([]models.ShortenData, error) {
 	result, err := s.shortenRepository.FindAll()

@@ -105,28 +105,23 @@ func (pg *Postgres) FindAll() ([]models.ShortenData, error) {
 	return result, nil
 }
 
-func (pg *Postgres) SaveAll(urls []models.ShortenData) error {
-	if len(urls) == 0 {
+func (pg *Postgres) SaveAll(rows []models.ShortenData) error {
+	if len(rows) == 0 {
 		return nil
 	}
-	ctx := context.Background()
-	tx, err := pg.connPool.Begin(ctx)
+	conn, err := pg.connPool.Acquire(context.Background())
+	defer conn.Release()
 	if err != nil {
 		return err
 	}
-	for _, url := range urls {
-		query := `INSERT INTO short (original_url, short_url, correlation_id) VALUES (@originalURL, @shortURL, @correlationId)`
-		args := pgx.NamedArgs{
-			"originalURL":   url.OriginalURL,
-			"shortURL":      url.ShortURL,
-			"correlationId": url.CorrelationID,
-		}
-		_, err = tx.Exec(ctx, query, args)
-		if err != nil {
-			tx.Rollback(ctx)
-		}
-	}
-	tx.Commit(ctx)
+	_, err = conn.CopyFrom(
+		context.Background(),
+		pgx.Identifier{"short"},
+		[]string{"correlation_id", "short_url", "original_url"},
+		pgx.CopyFromSlice(len(rows), func(i int) ([]any, error) {
+			return []any{rows[i].CorrelationID, rows[i].ShortURL, rows[i].OriginalURL}, nil
+		}),
+	)
 	return err
 }
 
