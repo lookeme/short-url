@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
+	"github.com/jackc/pgerrcode"
+	"github.com/lookeme/short-url/internal/utils"
 	"io"
 	"net/http"
 	"net/url"
@@ -34,11 +36,22 @@ func (h *URLHandler) HandleShorten(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 	val, err := h.urlService.CreateAndSave(request.URL)
-	if err != nil {
-		fmt.Println("error during creating hash ", err.Error())
-	}
 	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(http.StatusCreated)
+	if err != nil {
+		h.urlService.Log.Log.Error(err.Error())
+		code := utils.ErrorCode(err)
+		if code == pgerrcode.UniqueViolation {
+			res.WriteHeader(http.StatusConflict)
+			data, ok := h.urlService.FindByURL(request.URL)
+			if !ok {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+			} else {
+				val = data.ShortURL
+			}
+		}
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
 	b, err := json.Marshal(models.Response{
 		Result: val,
 	})
@@ -53,6 +66,7 @@ func (h *URLHandler) HandleShorten(res http.ResponseWriter, req *http.Request) {
 
 func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
+	defer req.Body.Close()
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
@@ -60,16 +74,40 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
-	val, err := h.urlService.CreateAndSave(string(b))
-	if err != nil {
-		fmt.Println("error during creating hashL ", err.Error())
-	}
+	urlToSave := string(b)
+	val, err := h.urlService.CreateAndSave(urlToSave)
 	res.Header().Set("content-type", "text/plain")
-	res.WriteHeader(http.StatusCreated)
+	if err != nil {
+		h.urlService.Log.Log.Error(err.Error())
+		code := utils.ErrorCode(err)
+		if code == pgerrcode.UniqueViolation {
+			res.WriteHeader(http.StatusConflict)
+			data, ok := h.urlService.FindByURL(urlToSave)
+			if !ok {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+			} else {
+				val = data.ShortURL
+			}
+		}
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
+	if err != nil {
+		h.urlService.Log.Log.Error(err.Error())
+	}
 	_, err = res.Write([]byte(val))
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
+}
+
+func (h *URLHandler) HandlePing(res http.ResponseWriter, _ *http.Request) {
+	ctx := context.Background()
+	err := h.urlService.Ping(ctx)
+	if err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+	}
+	res.WriteHeader(http.StatusOK)
 }
 
 func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
@@ -83,23 +121,17 @@ func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Value is not found", http.StatusBadRequest)
 		return
 	}
-	res.Header().Set("Location", val)
+	res.Header().Set("Location", val.OriginalURL)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, req *http.Request) {
+func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, _ *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	urls, err := h.urlService.FindAll()
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("URLS", urls)
-
-	fmt.Println("params", req.URL.String())
-
-	b1, _ := io.ReadAll(req.Body)
-	fmt.Println("body", string(b1))
 	if urls == nil {
 		res.WriteHeader(http.StatusNoContent)
 		return
@@ -114,5 +146,31 @@ func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, req *http.Request) 
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
+	}
+}
+
+func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Request) {
+	var request []models.BatchRequest
+	body, err := io.ReadAll(req.Body)
+	defer req.Body.Close()
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	if err := json.Unmarshal(body, &request); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	val, err := h.urlService.CreateAndSaveBatch(request)
+	if err != nil {
+		h.urlService.Log.Log.Error(err.Error())
+	}
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
+	b, err := json.Marshal(val)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	_, err = res.Write(b)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 }

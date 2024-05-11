@@ -4,7 +4,8 @@ import "github.com/lookeme/short-url/internal/models"
 
 type ShortenURLService interface {
 	CreateAndSave(key string) (string, error)
-	FindByURL(key string) (string, bool)
-	FindByKey(key string) (string, bool)
+	FindByURL(key string) (models.ShortenData, bool)
+	FindByKey(key string) (models.ShortenData, bool)
 	FindAll() ([]models.ShortenData, error)
+	CreateAndSaveBatch(urls []models.BatchRequest) ([]models.BatchResponse, error)
 }

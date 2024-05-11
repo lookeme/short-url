@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // ShortToken - interface for short token creation
@@ -57,4 +58,17 @@ func (s *shortToken) Check(sToken string) error {
 		return errors.New("wrong token alphabet")
 	}
 	return nil
+}
+
+func CreateShortURL(key string, baseURL string) string {
+	return fmt.Sprintf("%s/%s", baseURL, key)
+}
+
+func ErrorCode(err error) string {
+	var pgerr *pgconn.PgError
+	ok := errors.As(err, &pgerr)
+	if !ok {
+		return ""
+	}
+	return pgerr.Code
 }

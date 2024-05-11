@@ -41,7 +41,7 @@ func TestURLHandlerIndex(t *testing.T) {
 	}
 	storage, err := inmemory.NewStorage(&stCfg, &zlog)
 	require.NoError(t, err)
-	urlService := shorten.NewURLService(storage, &cfg)
+	urlService := shorten.NewURLService(storage, &zlog, &cfg)
 	urlHandler := NewURLHandler(&urlService)
 	requestBody := "https://practicum.yandex.ru/"
 	req := models.Request{
