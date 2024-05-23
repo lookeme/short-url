@@ -23,17 +23,26 @@ type Response struct {
 }
 
 type ShortenData struct {
-	ID            int64  `json:"id,omitempty"`
-	CorrelationID string `json:"correlation_id"`
+	ID            int64  `json:"-"`
+	CorrelationID string `json:"-"`
 	ShortURL      string `json:"short_url"`
 	OriginalURL   string `json:"original_url"`
+	UserID        int    `json:"-"`
 }
 
-func NewShortenData(id int64, originalURL string, shortURL string) *ShortenData {
+type User struct {
+	UserID   int    `json:"id,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Pass     string `json:"pass,omitempty"`
+	IsActive bool   `json:"is_active"`
+}
+
+func NewShortenData(id int64, originalURL string, shortURL string, userID int) *ShortenData {
 	return &ShortenData{
 		ID:          id,
 		ShortURL:    shortURL,
 		OriginalURL: originalURL,
+		UserID:      userID,
 	}
 }
 

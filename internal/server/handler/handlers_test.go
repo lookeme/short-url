@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/lookeme/short-url/internal/app/domain/user"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -39,10 +40,13 @@ func TestURLHandlerIndex(t *testing.T) {
 	zlog := logger.Logger{
 		Log: log,
 	}
-	storage, err := inmemory.NewStorage(&stCfg, &zlog)
+	storageURL, err := inmemory.NewInMemShortenStorage(&stCfg, &zlog)
 	require.NoError(t, err)
-	urlService := shorten.NewURLService(storage, &zlog, &cfg)
-	urlHandler := NewURLHandler(&urlService)
+	usrStorage, err := inmemory.NewInMemUserStorage(&zlog)
+	require.NoError(t, err)
+	urlService := shorten.NewURLService(storageURL, &zlog, &cfg)
+	usrService := user.NewUserService(usrStorage, &zlog)
+	urlHandler := NewURLHandler(&urlService, &usrService)
 	requestBody := "https://practicum.yandex.ru/"
 	req := models.Request{
 		URL: requestBody,

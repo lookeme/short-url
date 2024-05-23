@@ -10,12 +10,12 @@ import (
 )
 
 type URLService struct {
-	shortenRepository storage.Repository
+	shortenRepository storage.ShortenRepository
 	cfg               *configuration.Config
 	Log               *logger.Logger
 }
 
-func NewURLService(repository storage.Repository, log *logger.Logger, cfg *configuration.Config) URLService {
+func NewURLService(repository storage.ShortenRepository, log *logger.Logger, cfg *configuration.Config) URLService {
 	return URLService{
 		shortenRepository: repository,
 		cfg:               cfg,
@@ -23,10 +23,10 @@ func NewURLService(repository storage.Repository, log *logger.Logger, cfg *confi
 	}
 }
 
-func (s *URLService) CreateAndSave(originURL string) (string, error) {
+func (s *URLService) CreateAndSave(originURL string, userID int) (string, error) {
 	token := utils.NewShortToken(7)
 	key := token.Get()
-	if err := s.shortenRepository.Save(utils.CreateShortURL(key, s.cfg.Network.BaseURL), originURL); err != nil {
+	if err := s.shortenRepository.Save(utils.CreateShortURL(key, s.cfg.Network.BaseURL), originURL, userID); err != nil {
 		return "", err
 	}
 	return utils.CreateShortURL(key, s.cfg.Network.BaseURL), nil
@@ -84,6 +84,14 @@ func (s *URLService) FindByKey(key string) (models.ShortenData, bool) {
 }
 func (s *URLService) FindAll() ([]models.ShortenData, error) {
 	result, err := s.shortenRepository.FindAll()
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func (s *URLService) FindAllByUserID(userID int) ([]models.ShortenData, error) {
+	result, err := s.shortenRepository.FindAllByUserID(userID)
 	if err != nil {
 		return result, err
 	}

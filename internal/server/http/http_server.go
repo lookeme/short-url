@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/lookeme/short-url/internal/security"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -17,6 +18,7 @@ type Server struct {
 	config  *configuration.NetworkCfg
 	logger  *logger.Logger
 	gzip    *compression.Compressor
+	auth    *security.Authorization
 }
 
 func NewServer(
@@ -24,12 +26,14 @@ func NewServer(
 	cfg *configuration.NetworkCfg,
 	logger *logger.Logger,
 	compressor *compression.Compressor,
+	auth *security.Authorization,
 ) *Server {
 	return &Server{
 		handler: handler,
 		config:  cfg,
 		logger:  logger,
 		gzip:    compressor,
+		auth:    auth,
 	}
 }
 
@@ -39,7 +43,13 @@ func (s *Server) Serve() error {
 	r.Use(func(h http.Handler) http.Handler {
 		return s.gzip.GzipMiddleware(h)
 	})
-	r.Post("/", s.handler.HandlePOST)
+	r.Group(func(subRouter chi.Router) {
+		subRouter.Use(s.auth.AuthMiddleware)
+		subRouter.Post("/", s.handler.HandlePOST)
+		subRouter.Get("/api/user/urls", s.handler.HandleUserURLs)
+	})
+	//r.Post("/", s.handler.HandlePOST)
+	r.Get("/api/user/urls", s.handler.HandleUserURLs)
 	r.Post("/api/shorten", s.handler.HandleShorten)
 	r.Post("/api/shorten/batch", s.handler.HandleShortenBatch)
 	r.Get("/{id}", s.handler.HandleGet)

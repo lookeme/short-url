@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgconn"
+	"strings"
 )
 
 // ShortToken - interface for short token creation
@@ -58,6 +59,17 @@ func (s *shortToken) Check(sToken string) error {
 		return errors.New("wrong token alphabet")
 	}
 	return nil
+}
+
+func GetToken(str string) (string, error) {
+	if str == "" {
+		return "", errors.New("token is invalid")
+	}
+	tokens := strings.Split(str, " ")
+	if len(tokens) != 2 {
+		return "", errors.New("token is invalid")
+	}
+	return tokens[1], nil
 }
 
 func CreateShortURL(key string, baseURL string) string {
