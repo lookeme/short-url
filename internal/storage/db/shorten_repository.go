@@ -31,7 +31,7 @@ func (r *ShortenRepository) Save(key, value string, userID int) error {
 	return nil
 }
 func (r *ShortenRepository) FindByURL(key string) (models.ShortenData, bool) {
-	query := `SELECT id, correlation_id, short_url, original_url FROM short WHERE original_url = @originalURL`
+	query := `SELECT id, correlation_id, short_url, original_url, user_id FROM short WHERE original_url = @originalURL`
 	args := pgx.NamedArgs{
 		"originalURL": key,
 	}
