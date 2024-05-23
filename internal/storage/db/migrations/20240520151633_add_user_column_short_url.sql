@@ -3,7 +3,7 @@
 SELECT 'up SQL query';
 -- +goose StatementEnd
 
-ALTER TABLE short ADD user_id INTEGER;
+ALTER TABLE short ADD user_id INTEGER DEFAULT 0;
 
 CREATE TABLE users
 (
@@ -13,8 +13,6 @@ CREATE TABLE users
     date_create timestamp default now() ,
     is_active   bool      DEFAULT true
 );
-
-ALTER TABLE short ADD CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id);
 
 -- +goose Down
 -- +goose StatementBegin

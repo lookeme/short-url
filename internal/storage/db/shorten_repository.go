@@ -49,7 +49,7 @@ func (r *ShortenRepository) FindByURL(key string) (models.ShortenData, bool) {
 }
 
 func (r *ShortenRepository) FindByURLs(keys []string) ([]models.ShortenData, error) {
-	query := `SELECT id, short_url, original_url, correlation_id FROM short WHERE original_url = ANY (@originalURL)`
+	query := `SELECT id, short_url, original_url, correlation_id, user_id FROM short WHERE original_url = ANY (@originalURL)`
 	args := pgx.NamedArgs{
 		"originalURL": keys,
 	}
@@ -65,7 +65,7 @@ func (r *ShortenRepository) FindByURLs(keys []string) ([]models.ShortenData, err
 	return result, nil
 }
 func (r *ShortenRepository) FindByKey(key string) (models.ShortenData, bool) {
-	query := `SELECT id, correlation_id, short_url, original_url  FROM short WHERE short_url = @shortURL`
+	query := `SELECT id, correlation_id, short_url, original_url, user_id  FROM short WHERE short_url = @shortURL`
 	args := pgx.NamedArgs{
 		"shortURL": key,
 	}
@@ -82,7 +82,7 @@ func (r *ShortenRepository) FindByKey(key string) (models.ShortenData, bool) {
 	return data, true
 }
 func (r *ShortenRepository) FindAll() ([]models.ShortenData, error) {
-	query := `SELECT id, short_url, original_url, correlation_id FROM short ORDER BY date_create DESC`
+	query := `SELECT id, short_url, original_url, correlation_id, user_id FROM short ORDER BY date_create DESC`
 	rows, err := r.postgres.connPool.Query(context.Background(), query)
 	if err != nil {
 		return nil, err
