@@ -45,6 +45,7 @@ func (s *Server) Serve() error {
 		subRouter.Use(s.auth.AuthMiddleware)
 		subRouter.Post("/", s.handler.HandlePOST)
 		subRouter.Get("/api/user/urls", s.handler.HandleUserURLs)
+		subRouter.Delete("/api/user/urls", s.handler.HandleDeleteURLs)
 	})
 	//r.Post("/", s.handler.HandlePOST)
 	r.Get("/api/user/urls", s.handler.HandleUserURLs)

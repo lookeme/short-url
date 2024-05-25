@@ -28,6 +28,7 @@ type ShortenData struct {
 	ShortURL      string `json:"short_url"`
 	OriginalURL   string `json:"original_url"`
 	UserID        int    `json:"-"`
+	DeletedFlag   bool   `db:"is_deleted"`
 }
 
 type User struct {

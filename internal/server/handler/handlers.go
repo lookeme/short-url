@@ -136,8 +136,12 @@ func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Value is not found", http.StatusBadRequest)
 		return
 	}
-	res.Header().Set("Location", val.OriginalURL)
-	res.WriteHeader(http.StatusTemporaryRedirect)
+	if val.DeletedFlag {
+		res.WriteHeader(http.StatusGone)
+	} else {
+		res.Header().Set("Location", val.OriginalURL)
+		res.WriteHeader(http.StatusTemporaryRedirect)
+	}
 }
 
 func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, r *http.Request) {
@@ -198,4 +202,27 @@ func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Reque
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
+}
+
+func (h *URLHandler) HandleDeleteURLs(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	token := req.Header.Get("Authorization")
+	token, err := utils.GetToken(token)
+	if err != nil {
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	userID := security.GetUserID(token)
+	if userID == 0 {
+		http.Error(res, "userID is not presented in token", http.StatusUnauthorized)
+	}
+	var request []string
+	body, _ := io.ReadAll(req.Body)
+	if err := json.Unmarshal(body, &request); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	if len(request) != 0 {
+		go h.urlService.DeleteByShortURLAndUserID(request, userID)
+	}
+	res.WriteHeader(http.StatusAccepted)
 }
