@@ -206,23 +206,13 @@ func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Reque
 
 func (h *URLHandler) HandleDeleteURLs(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	token := req.Header.Get("Authorization")
-	token, err := utils.GetToken(token)
-	if err != nil {
-		res.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	userID := security.GetUserID(token)
-	if userID == 0 {
-		http.Error(res, "userID is not presented in token", http.StatusUnauthorized)
-	}
 	var request []string
 	body, _ := io.ReadAll(req.Body)
 	if err := json.Unmarshal(body, &request); err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 	if len(request) != 0 {
-		go h.urlService.DeleteByShortURLAndUserID(request, userID)
+		h.urlService.DeleteByShortURLs(request)
 	}
 	res.WriteHeader(http.StatusAccepted)
 }

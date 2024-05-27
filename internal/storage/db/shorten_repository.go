@@ -130,10 +130,10 @@ func (r *ShortenRepository) FindAllByUserID(userID int) ([]models.ShortenData, e
 	}
 	return result, nil
 }
-func (r *ShortenRepository) DeleteByShortURLAndUserID(shortURL string, userID int) bool {
+func (r *ShortenRepository) DeleteByShortURL(shortURL string) bool {
 	var err error
-	sqlStatement := `UPDATE short SET is_deleted = true WHERE short_url = $1 AND user_id = $2`
-	_, err = r.postgres.connPool.Exec(context.Background(), sqlStatement, shortURL, userID)
+	sqlStatement := `UPDATE short SET is_deleted = true WHERE short_url = $1`
+	_, err = r.postgres.connPool.Exec(context.Background(), sqlStatement, shortURL)
 	return err == nil
 }
 

@@ -104,7 +104,7 @@ func (s *URLService) Ping(_ context.Context) error {
 	return nil
 }
 
-func (s *URLService) DeleteByShortURLAndUserID(shortURLs []string, userID int) error {
+func (s *URLService) DeleteByShortURLs(shortURLs []string) error {
 	results := make(chan bool)
 	var wg sync.WaitGroup
 
@@ -113,7 +113,7 @@ func (s *URLService) DeleteByShortURLAndUserID(shortURLs []string, userID int) e
 		url := val
 		go func() {
 			defer wg.Done()
-			results <- s.shortenRepository.DeleteByShortURLAndUserID(utils.CreateShortURL(url, s.cfg.Network.BaseURL), userID)
+			results <- s.shortenRepository.DeleteByShortURL(utils.CreateShortURL(url, s.cfg.Network.BaseURL))
 		}()
 	}
 

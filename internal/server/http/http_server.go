@@ -40,14 +40,13 @@ func NewServer(
 func (s *Server) Serve() error {
 	r := chi.NewRouter()
 	r.Use(s.logger.Middleware)
-	r.Use(s.gzip.GzipMiddleware)
+	//r.Use(s.gzip.GzipMiddleware)
 	r.Group(func(subRouter chi.Router) {
 		subRouter.Use(s.auth.AuthMiddleware)
 		subRouter.Post("/", s.handler.HandlePOST)
 		subRouter.Get("/api/user/urls", s.handler.HandleUserURLs)
-		subRouter.Delete("/api/user/urls", s.handler.HandleDeleteURLs)
 	})
-	//r.Post("/", s.handler.HandlePOST)
+	r.Delete("/api/user/urls", s.handler.HandleDeleteURLs)
 	r.Get("/api/user/urls", s.handler.HandleUserURLs)
 	r.Post("/api/shorten", s.handler.HandleShorten)
 	r.Post("/api/shorten/batch", s.handler.HandleShortenBatch)
