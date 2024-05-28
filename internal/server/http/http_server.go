@@ -1,8 +1,9 @@
 package http
 
 import (
-	"github.com/lookeme/short-url/internal/security"
 	"net/http"
+
+	"github.com/lookeme/short-url/internal/security"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"

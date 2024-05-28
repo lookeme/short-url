@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
+	"log"
+
 	"github.com/lookeme/short-url/internal/app/domain/user"
 	"github.com/lookeme/short-url/internal/security"
-	"log"
 
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/compression"

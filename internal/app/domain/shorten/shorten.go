@@ -2,13 +2,14 @@ package shorten
 
 import (
 	"context"
+	"sync"
+
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/models"
 	"github.com/lookeme/short-url/internal/storage"
 	"github.com/lookeme/short-url/internal/utils"
 	"go.uber.org/zap"
-	"sync"
 )
 
 type URLService struct {

@@ -2,8 +2,9 @@ package db
 
 import (
 	"context"
-	"github.com/lookeme/short-url/internal/storage"
 	"sync"
+
+	"github.com/lookeme/short-url/internal/storage"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"

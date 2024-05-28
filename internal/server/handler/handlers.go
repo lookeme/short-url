@@ -3,14 +3,15 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/url"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgerrcode"
 	"github.com/lookeme/short-url/internal/app/domain/user"
 	"github.com/lookeme/short-url/internal/security"
 	"github.com/lookeme/short-url/internal/utils"
-	"io"
-	"net/http"
-	"net/url"
 
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/models"
