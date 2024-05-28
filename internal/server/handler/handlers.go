@@ -3,13 +3,14 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgerrcode"
+	"github.com/lookeme/short-url/internal/app/domain/user"
+	"github.com/lookeme/short-url/internal/security"
 	"github.com/lookeme/short-url/internal/utils"
 	"io"
 	"net/http"
 	"net/url"
-
-	"github.com/go-chi/chi/v5"
 
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/models"
@@ -17,11 +18,13 @@ import (
 
 type URLHandler struct {
 	urlService *shorten.URLService
+	usrService *user.UsrService
 }
 
-func NewURLHandler(urlService *shorten.URLService) *URLHandler {
+func NewURLHandler(urlService *shorten.URLService, usrService *user.UsrService) *URLHandler {
 	return &URLHandler{
 		urlService: urlService,
+		usrService: usrService,
 	}
 }
 
@@ -35,7 +38,7 @@ func (h *URLHandler) HandleShorten(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
-	val, err := h.urlService.CreateAndSave(request.URL)
+	val, err := h.urlService.CreateAndSave(request.URL, 1)
 	res.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		h.urlService.Log.Log.Error(err.Error())
@@ -72,10 +75,22 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	}
 	_, err = url.Parse(string(b))
 	if err != nil {
+
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 	urlToSave := string(b)
-	val, err := h.urlService.CreateAndSave(urlToSave)
+	token := req.Header.Get("Authorization")
+	token, err = utils.GetToken(token)
+	if err != nil {
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	userID := security.GetUserID(token)
+	if userID == 0 {
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	val, err := h.urlService.CreateAndSave(urlToSave, userID)
 	res.Header().Set("content-type", "text/plain")
 	if err != nil {
 		h.urlService.Log.Log.Error(err.Error())
@@ -125,9 +140,19 @@ func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, _ *http.Request) {
+func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, r *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-	urls, err := h.urlService.FindAll()
+	token := r.Header.Get("Authorization")
+	token, err := utils.GetToken(token)
+	if err != nil {
+		res.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	userID := security.GetUserID(token)
+	if userID == 0 {
+		http.Error(res, "userID is not presented in token", http.StatusUnauthorized)
+	}
+	urls, err := h.urlService.FindAllByUserID(userID)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return

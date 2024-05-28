@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/lookeme/short-url/internal/app/domain/user"
+	"github.com/lookeme/short-url/internal/security"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -39,10 +41,14 @@ func TestURLHandlerIndex(t *testing.T) {
 	zlog := logger.Logger{
 		Log: log,
 	}
-	storage, err := inmemory.NewStorage(&stCfg, &zlog)
+	storageURL, err := inmemory.NewInMemShortenStorage(&stCfg, &zlog)
 	require.NoError(t, err)
-	urlService := shorten.NewURLService(storage, &zlog, &cfg)
-	urlHandler := NewURLHandler(&urlService)
+	usrStorage, err := inmemory.NewInMemUserStorage(&zlog)
+	require.NoError(t, err)
+	urlService := shorten.NewURLService(storageURL, &zlog, &cfg)
+	usrService := user.NewUserService(usrStorage, &zlog)
+	urlHandler := NewURLHandler(&urlService, &usrService)
+	auth := security.New(&usrService, &zlog)
 	requestBody := "https://practicum.yandex.ru/"
 	req := models.Request{
 		URL: requestBody,
@@ -56,7 +62,8 @@ func TestURLHandlerIndex(t *testing.T) {
 	t.Run("handler test #1", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/", bodyReader)
 		w := httptest.NewRecorder()
-		urlHandler.HandlePOST(w, req)
+		handlerToTest := auth.AuthMiddleware(http.HandlerFunc(urlHandler.HandlePOST))
+		handlerToTest.ServeHTTP(w, req)
 		res := w.Result()
 		assert.Equal(t, http.StatusCreated, res.StatusCode)
 		assert.Equal(t, "text/plain", res.Header.Get("Content-Type"))

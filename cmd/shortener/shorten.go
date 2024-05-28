@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/lookeme/short-url/internal/app/domain/user"
+	"github.com/lookeme/short-url/internal/security"
 	"log"
 
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
@@ -10,7 +12,6 @@ import (
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/server/handler"
 	"github.com/lookeme/short-url/internal/server/http"
-	"github.com/lookeme/short-url/internal/storage"
 	"github.com/lookeme/short-url/internal/storage/db"
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 )
@@ -28,27 +29,42 @@ func run(ctx context.Context, cfg *configuration.Config) error {
 	if err != nil {
 		return err
 	}
-	store, err := createStorage(ctx, zlogger, cfg.Storage)
+	storage, err := createStorage(ctx, zlogger, cfg.Storage)
 	if err != nil {
 		return err
 	}
-	urlService := shorten.NewURLService(store, zlogger, cfg)
-	urlHandler := handler.NewURLHandler(&urlService)
+	urlService := shorten.NewURLService(storage.ShortenRepository, zlogger, cfg)
+	userService := user.NewUserService(storage.UserRepository, zlogger)
+	urlHandler := handler.NewURLHandler(&urlService, &userService)
+	authService := security.New(&userService, zlogger)
 	var gzip compression.Compressor
-	server := http.NewServer(urlHandler, cfg.Network, zlogger, &gzip)
-	defer store.Close()
+	server := http.NewServer(urlHandler, cfg.Network, zlogger, &gzip, authService)
+	defer storage.Close()
 	return server.Serve()
 }
 
-func createStorage(ctx context.Context, log *logger.Logger, cfg *configuration.Storage) (storage.Repository, error) {
+func createStorage(ctx context.Context, log *logger.Logger, cfg *configuration.Storage) (*db.Storage, error) {
+	var storage *db.Storage
 	if len(cfg.ConnString) == 0 {
-		store, err := inmemory.NewStorage(cfg, log)
+		shortenStore, err := inmemory.NewInMemShortenStorage(cfg, log)
 		if err != nil {
-			if err := store.RecoverFromFile(); err != nil {
-				return nil, err
+			if err := shortenStore.RecoverFromFile(); err != nil {
+				return storage, err
 			}
 		}
-		return store, err
+		userStore, err := inmemory.NewInMemUserStorage(log)
+		if err != nil {
+			return storage, err
+		}
+		storage = db.NewStorage(userStore, shortenStore)
+	} else {
+		postgres, err := db.New(ctx, log, cfg)
+		if err != nil {
+			return storage, err
+		}
+		shortenStorage := db.NewShortenRepository(postgres)
+		userStorage := db.NewUserRepository(postgres)
+		storage = db.NewStorage(userStorage, shortenStorage)
 	}
-	return db.New(ctx, log, cfg)
+	return storage, nil
 }
