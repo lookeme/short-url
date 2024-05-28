@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/lookeme/short-url/internal/models"
 	"go.uber.org/zap"
@@ -31,7 +32,7 @@ func (r *ShortenRepository) Save(key, value string, userID int) error {
 	return nil
 }
 func (r *ShortenRepository) FindByURL(key string) (models.ShortenData, bool) {
-	query := `SELECT id, correlation_id, short_url, original_url, user_id FROM short WHERE original_url = @originalURL`
+	query := `SELECT id, correlation_id, short_url, original_url, user_id, is_deleted FROM short WHERE original_url = @originalURL AND is_deleted = false`
 	args := pgx.NamedArgs{
 		"originalURL": key,
 	}
@@ -49,7 +50,7 @@ func (r *ShortenRepository) FindByURL(key string) (models.ShortenData, bool) {
 }
 
 func (r *ShortenRepository) FindByURLs(keys []string) ([]models.ShortenData, error) {
-	query := `SELECT id, short_url, original_url, correlation_id, user_id FROM short WHERE original_url = ANY (@originalURL)`
+	query := `SELECT id, short_url, original_url, correlation_id, user_id, is_deleted FROM short WHERE original_url = ANY (@originalURL) AND is_deleted = false`
 	args := pgx.NamedArgs{
 		"originalURL": keys,
 	}
@@ -65,7 +66,7 @@ func (r *ShortenRepository) FindByURLs(keys []string) ([]models.ShortenData, err
 	return result, nil
 }
 func (r *ShortenRepository) FindByKey(key string) (models.ShortenData, bool) {
-	query := `SELECT id, correlation_id, short_url, original_url, user_id  FROM short WHERE short_url = @shortURL`
+	query := `SELECT id, correlation_id, short_url, original_url, user_id, is_deleted FROM short WHERE short_url = @shortURL`
 	args := pgx.NamedArgs{
 		"shortURL": key,
 	}
@@ -82,7 +83,7 @@ func (r *ShortenRepository) FindByKey(key string) (models.ShortenData, bool) {
 	return data, true
 }
 func (r *ShortenRepository) FindAll() ([]models.ShortenData, error) {
-	query := `SELECT id, short_url, original_url, correlation_id, user_id FROM short ORDER BY date_create DESC`
+	query := `SELECT id, short_url, original_url, correlation_id, user_id, is_deleted FROM short WHERE is_deleted = false ORDER BY date_create DESC`
 	rows, err := r.postgres.connPool.Query(context.Background(), query)
 	if err != nil {
 		return nil, err
@@ -116,7 +117,7 @@ func (r *ShortenRepository) SaveAll(rows []models.ShortenData) error {
 }
 
 func (r *ShortenRepository) FindAllByUserID(userID int) ([]models.ShortenData, error) {
-	query := `SELECT id, short_url, original_url, correlation_id, user_id FROM short WHERE user_id = (@userID) ORDER BY date_create DESC`
+	query := `SELECT id, short_url, original_url, correlation_id, user_id, is_deleted FROM short WHERE user_id = (@userID) AND short.is_deleted = false ORDER BY date_create DESC`
 	args := pgx.NamedArgs{
 		"userID": userID,
 	}
@@ -128,8 +129,13 @@ func (r *ShortenRepository) FindAllByUserID(userID int) ([]models.ShortenData, e
 	if err != nil {
 		return nil, err
 	}
-
 	return result, nil
+}
+func (r *ShortenRepository) DeleteByShortURL(shortURL string) bool {
+	var err error
+	sqlStatement := `UPDATE short SET is_deleted = true WHERE short_url = $1`
+	_, err = r.postgres.connPool.Exec(context.Background(), sqlStatement, shortURL)
+	return err == nil
 }
 
 func (r *ShortenRepository) Close() error {

@@ -11,6 +11,7 @@ type ShortenRepository interface {
 	FindAll() ([]models.ShortenData, error)
 	FindAllByUserID(userID int) ([]models.ShortenData, error)
 	Close() error
+	DeleteByShortURL(shortURL string) bool
 }
 
 type UserRepository interface {

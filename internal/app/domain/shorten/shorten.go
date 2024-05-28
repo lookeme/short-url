@@ -2,11 +2,14 @@ package shorten
 
 import (
 	"context"
+	"sync"
+
 	"github.com/lookeme/short-url/internal/configuration"
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/models"
 	"github.com/lookeme/short-url/internal/storage"
 	"github.com/lookeme/short-url/internal/utils"
+	"go.uber.org/zap"
 )
 
 type URLService struct {
@@ -99,5 +102,28 @@ func (s *URLService) FindAllByUserID(userID int) ([]models.ShortenData, error) {
 }
 
 func (s *URLService) Ping(_ context.Context) error {
+	return nil
+}
+
+func (s *URLService) DeleteByShortURLs(shortURLs []string) error {
+	results := make(chan bool)
+	var wg sync.WaitGroup
+
+	for _, val := range shortURLs {
+		wg.Add(1)
+		url := val
+		go func() {
+			defer wg.Done()
+			results <- s.shortenRepository.DeleteByShortURL(utils.CreateShortURL(url, s.cfg.Network.BaseURL))
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+	for i := range results {
+		s.Log.Log.Info("delete operation", zap.Bool("val", i))
+	}
 	return nil
 }

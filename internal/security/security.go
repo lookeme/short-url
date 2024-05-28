@@ -1,13 +1,14 @@
 package security
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lookeme/short-url/internal/app/domain/user"
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/utils"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type Authorization struct {

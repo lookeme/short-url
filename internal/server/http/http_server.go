@@ -1,8 +1,9 @@
 package http
 
 import (
-	"github.com/lookeme/short-url/internal/security"
 	"net/http"
+
+	"github.com/lookeme/short-url/internal/security"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -46,7 +47,7 @@ func (s *Server) Serve() error {
 		subRouter.Post("/", s.handler.HandlePOST)
 		subRouter.Get("/api/user/urls", s.handler.HandleUserURLs)
 	})
-	//r.Post("/", s.handler.HandlePOST)
+	r.Delete("/api/user/urls", s.handler.HandleDeleteURLs)
 	r.Get("/api/user/urls", s.handler.HandleUserURLs)
 	r.Post("/api/shorten", s.handler.HandleShorten)
 	r.Post("/api/shorten/batch", s.handler.HandleShortenBatch)

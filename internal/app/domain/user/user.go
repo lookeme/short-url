@@ -3,6 +3,7 @@ package user
 import (
 	"crypto/rand"
 	"encoding/base64"
+
 	"github.com/lookeme/short-url/internal/logger"
 	"github.com/lookeme/short-url/internal/models"
 	"github.com/lookeme/short-url/internal/storage"

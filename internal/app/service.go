@@ -8,6 +8,7 @@ type ShortenURLService interface {
 	FindByKey(key string) (models.ShortenData, bool)
 	FindAll() ([]models.ShortenData, error)
 	CreateAndSaveBatch(urls []models.BatchRequest) ([]models.BatchResponse, error)
+	DeleteByShortURLs(urls []string) error
 }
 
 type UserService interface {

@@ -177,3 +177,12 @@ func (s *InMemUserStorage) FindByID(userID int) (models.User, error) {
 	}
 	return user, nil
 }
+
+func (s *InMemShortenStorage) DeleteByShortURL(shortURL string) bool {
+	defer s.mutex.Unlock()
+	s.mutex.Lock()
+	val := s.keyToURL[shortURL]
+	val.DeletedFlag = true
+	s.keyToURL[shortURL] = val
+	return true
+}

@@ -3,14 +3,15 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/url"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgerrcode"
 	"github.com/lookeme/short-url/internal/app/domain/user"
 	"github.com/lookeme/short-url/internal/security"
 	"github.com/lookeme/short-url/internal/utils"
-	"io"
-	"net/http"
-	"net/url"
 
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/models"
@@ -136,8 +137,12 @@ func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Value is not found", http.StatusBadRequest)
 		return
 	}
-	res.Header().Set("Location", val.OriginalURL)
-	res.WriteHeader(http.StatusTemporaryRedirect)
+	if val.DeletedFlag {
+		res.WriteHeader(http.StatusGone)
+	} else {
+		res.Header().Set("Location", val.OriginalURL)
+		res.WriteHeader(http.StatusTemporaryRedirect)
+	}
 }
 
 func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, r *http.Request) {
@@ -198,4 +203,17 @@ func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Reque
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
+}
+
+func (h *URLHandler) HandleDeleteURLs(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	var request []string
+	body, _ := io.ReadAll(req.Body)
+	if err := json.Unmarshal(body, &request); err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+	}
+	if len(request) != 0 {
+		h.urlService.DeleteByShortURLs(request)
+	}
+	res.WriteHeader(http.StatusAccepted)
 }

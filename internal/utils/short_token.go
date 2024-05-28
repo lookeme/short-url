@@ -9,8 +9,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgconn"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // ShortToken - interface for short token creation
