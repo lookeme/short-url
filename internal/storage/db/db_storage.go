@@ -28,8 +28,8 @@ type Storage struct {
 	ShortenRepository storage.ShortenRepository
 }
 
-func (s Storage) Close() {
-	s.Close()
+func (s *Storage) Close() error {
+	return s.ShortenRepository.Close()
 }
 
 func NewStorage(userRepo storage.UserRepository, shortRepo storage.ShortenRepository) *Storage {
