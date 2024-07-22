@@ -1,3 +1,4 @@
+// Package user defines structures and methods related to user management.
 package user
 
 import (
@@ -18,6 +19,8 @@ type params struct {
 	keyLength   uint32
 }
 
+// UsrService represents a service for user management.
+// It incorporates logging and a repository for user persistence.
 type UsrService struct {
 	userRepository storage.UserRepository
 	Log            *logger.Logger
@@ -25,6 +28,8 @@ type UsrService struct {
 
 var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-"
 
+// NewUserService constructs a new instance of UsrService with necessary dependencies.
+// It requires a user repository for data persistence and a logger.
 func NewUserService(userRepository storage.UserRepository, log *logger.Logger) UsrService {
 	return UsrService{
 		userRepository,
@@ -32,6 +37,9 @@ func NewUserService(userRepository storage.UserRepository, log *logger.Logger) U
 	}
 }
 
+// CreateUser generates a new user with a random username and password,
+// hashes the password using Argon2 algorithm, and saves the user into the repository.
+// It returns a User model or an error if the operation fails.
 func (s *UsrService) CreateUser() (models.User, error) {
 	user := models.User{}
 	strPass := generatePass(8)
@@ -48,10 +56,14 @@ func (s *UsrService) CreateUser() (models.User, error) {
 	user.UserID = ID
 	return user, err
 }
+
+// FindByID retrieves a user from the repository by their ID.
 func (s *UsrService) FindByID(userID int) (models.User, error) {
 	return s.userRepository.FindByID(userID)
 }
 
+// generateFromPassword creates a password hash using the Argon2 ID hashing algorithm.
+// It returns a base64-encoded hash.
 func generateFromPassword(password string) (b64Hash string, err error) {
 	p := &params{
 		memory:      64 * 1024,

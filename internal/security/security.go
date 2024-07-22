@@ -1,3 +1,4 @@
+// Package security provides methods and structs related to user authentication.
 package security
 
 import (
@@ -11,6 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Authorization encapsulates the user service and provides methods for user authentication.
 type Authorization struct {
 	userService *user.UsrService
 	Log         *logger.Logger
@@ -24,6 +26,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// New constructs a new instance of Authorization with a user service and logger.
 func New(userService *user.UsrService, logger *logger.Logger) *Authorization {
 	return &Authorization{
 		userService: userService,
@@ -31,6 +34,8 @@ func New(userService *user.UsrService, logger *logger.Logger) *Authorization {
 	}
 }
 
+// AuthMiddleware is a middleware function that checks for a valid JWT in the Authorization header of the HTTP request.
+// If no token is provided, a new user is created and a JWT is generated and sent back in the response.
 func (auth *Authorization) AuthMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		var bearer = "Bearer "
@@ -58,6 +63,7 @@ func (auth *Authorization) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+// BuildJWTString generates a JWT for a specified user ID.
 func (auth *Authorization) BuildJWTString(userID int) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -72,6 +78,7 @@ func (auth *Authorization) BuildJWTString(userID int) (string, error) {
 	return tokenString, nil
 }
 
+// GetUserID retrieves a user ID from a given JWT.
 func GetUserID(tokenString string) int {
 	var claims Claims
 	jwt.ParseWithClaims(tokenString, &claims, func(t *jwt.Token) (interface{}, error) {

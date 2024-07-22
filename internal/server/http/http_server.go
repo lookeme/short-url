@@ -41,7 +41,7 @@ func NewServer(
 func (s *Server) Serve() error {
 	r := chi.NewRouter()
 	r.Use(s.logger.Middleware)
-	r.Use(s.gzip.GzipMiddleware)
+	//r.Use(s.gzip.GzipMiddleware)
 	r.Group(func(subRouter chi.Router) {
 		subRouter.Use(s.auth.AuthMiddleware)
 		subRouter.Post("/", s.handler.HandlePOST)

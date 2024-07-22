@@ -1,3 +1,4 @@
+// Package handler provides HTTP handlers for URL shortening operations.
 package handler
 
 import (
@@ -17,11 +18,13 @@ import (
 	"github.com/lookeme/short-url/internal/models"
 )
 
+// URLHandler struct encapsulates services needed for URL handling.
 type URLHandler struct {
 	urlService *shorten.URLService
 	usrService *user.UsrService
 }
 
+// NewURLHandler initializes a new URLHandler with specified services.
 func NewURLHandler(urlService *shorten.URLService, usrService *user.UsrService) *URLHandler {
 	return &URLHandler{
 		urlService: urlService,
@@ -29,6 +32,7 @@ func NewURLHandler(urlService *shorten.URLService, usrService *user.UsrService) 
 	}
 }
 
+// HandleShorten handles the HTTP request to shorten a specific URL.
 func (h *URLHandler) HandleShorten(res http.ResponseWriter, req *http.Request) {
 	var request models.Request
 	body, _ := io.ReadAll(req.Body)
@@ -68,6 +72,7 @@ func (h *URLHandler) HandleShorten(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// HandlePOST handles the HTTP POST request to shorten a URL for a specific user.
 func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	b, err := io.ReadAll(req.Body)
 	defer req.Body.Close()
@@ -117,6 +122,7 @@ func (h *URLHandler) HandlePOST(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// HandlePing provides a simple ping endpoint for checking server status.
 func (h *URLHandler) HandlePing(res http.ResponseWriter, _ *http.Request) {
 	ctx := context.Background()
 	err := h.urlService.Ping(ctx)
@@ -126,6 +132,8 @@ func (h *URLHandler) HandlePing(res http.ResponseWriter, _ *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
+// HandleGet retrieves a URL by its ID. If the URL is not found or is deleted,
+// it throws an appropriate HTTP error.
 func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 	if id == "" {
@@ -145,6 +153,7 @@ func (h *URLHandler) HandleGet(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// HandleUserURLs retrieves all URLs for a specific user.
 func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, r *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	token := r.Header.Get("Authorization")
@@ -179,6 +188,7 @@ func (h *URLHandler) HandleUserURLs(res http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HandleShortenBatch handles a batch of URLs to shorten.
 func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Request) {
 	var request []models.BatchRequest
 	body, err := io.ReadAll(req.Body)
@@ -205,6 +215,7 @@ func (h *URLHandler) HandleShortenBatch(res http.ResponseWriter, req *http.Reque
 	}
 }
 
+// HandleDeleteURLs removes a batch of URLs.
 func (h *URLHandler) HandleDeleteURLs(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	var request []string
