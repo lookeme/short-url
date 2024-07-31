@@ -92,7 +92,6 @@ func (r *ShortenRepository) FindAll() ([]models.ShortenData, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return result, nil
 }
 
