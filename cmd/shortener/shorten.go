@@ -1,3 +1,9 @@
+// Package main implements a URL shortener application.
+//
+// The application shortens URLs by generating a hash
+// of the original URL, then storing it in a database.
+// When the short representation of the URL is accessed,
+// it redirects to the original URL.
 package main
 
 import (
@@ -17,6 +23,9 @@ import (
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 )
 
+// main is the entry point of the URL shortening application.
+// It sets up the necessary configuration and starts the application.
+// If something fails during setup or execution, the program will log a Fatal error message.
 func main() {
 	cfg := configuration.New()
 	ctx := context.Background()
