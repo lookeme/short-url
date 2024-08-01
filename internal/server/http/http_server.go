@@ -14,6 +14,7 @@ import (
 	"github.com/lookeme/short-url/internal/server/handler"
 )
 
+// Server represents a server that handles HTTP requests.
 type Server struct {
 	handler *handler.URLHandler
 	config  *configuration.NetworkCfg
@@ -22,6 +23,7 @@ type Server struct {
 	auth    *security.Authorization
 }
 
+// NewServer creates a new instance of the Server struct.
 func NewServer(
 	handler *handler.URLHandler,
 	cfg *configuration.NetworkCfg,
@@ -38,6 +40,7 @@ func NewServer(
 	}
 }
 
+// Serve runs the HTTP server and listens for incoming requests.
 func (s *Server) Serve() error {
 	r := chi.NewRouter()
 	r.Use(s.logger.Middleware)

@@ -49,6 +49,7 @@ func (c *CompressWriter) Close() error {
 	return c.zw.Close()
 }
 
+// CompressReader structure to hold
 type CompressReader struct {
 	r  io.ReadCloser
 	zr *gzip.Reader

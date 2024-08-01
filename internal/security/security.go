@@ -18,9 +18,45 @@ type Authorization struct {
 	Log         *logger.Logger
 }
 
+// SecretKey is a constant that holds the secret key used for JWT signing and verification.
+// It is used in the following methods:
+//   - `BuildJWTString`: Generates a JWT token string with the provided user ID and expiration time.
+//     Example usage:
+//     ```go
+//     tokenString, err := auth.BuildJWTString(userID)
+//     ```
+//   - `GetUserID`: Parses and verifies a JWT token string and returns the user ID.
+//     Example usage:
+//     ```go
+//     userID := GetUserID(tokenString)
+//     ```
+//   - `verifyToken`: Verifies the validity of a JWT token string.
+//     Example usage:
+//     ```go
+//     isValid := auth.verifyToken(tokenString)
+//     ```
 const SecretKey = "secret-key"
+
+// TokenExp is a constant that represents the expiration time for JWT tokens.
+// It is used in the following method:
+//   - `BuildJWTString`: Generates a JWT token string with the provided user ID and expiration time.
+//     Example usage:
+//     ```go
+//     tokenString, err := auth.BuildJWTString(userID)
+//     ```
 const TokenExp = time.Hour * 3
 
+// Claims represents the custom claims for JWT authentication.
+// It contains the UserID and the RegisteredClaims from the jwt package.
+//
+// Usage Example:
+// var claims Claims
+//
+//	jwt.ParseWithClaims(tokenString, &claims, func(t *jwt.Token) (interface{}, error) {
+//	    return []byte(SecretKey), nil
+//	})
+//
+// userID := claims.UserID
 type Claims struct {
 	UserID int
 	jwt.RegisteredClaims
@@ -87,6 +123,9 @@ func GetUserID(tokenString string) int {
 	return claims.UserID
 }
 
+// verifyToken is a method that takes a token string as input and verifies its validity using JWT.
+// It returns true if the token is valid, otherwise false.
+// If there is an error during verification, it logs the error and returns false.
 func (auth *Authorization) verifyToken(tokenString string) bool {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {

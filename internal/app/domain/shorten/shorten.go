@@ -12,12 +12,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// URLService is a type that provides
 type URLService struct {
 	shortenRepository storage.ShortenRepository
 	cfg               *configuration.Config
 	Log               *logger.Logger
 }
 
+// NewURLService creates a new instance of URLService by initializing the shorten repository, configuration, and logger.
+// It returns the created URLService.
 func NewURLService(repository storage.ShortenRepository, log *logger.Logger, cfg *configuration.Config) URLService {
 	return URLService{
 		shortenRepository: repository,
@@ -26,6 +29,7 @@ func NewURLService(repository storage.ShortenRepository, log *logger.Logger, cfg
 	}
 }
 
+// handle error
 func (s *URLService) CreateAndSave(originURL string, userID int) (string, error) {
 	token := utils.NewShortToken(7)
 	key := token.Get()
@@ -35,6 +39,11 @@ func (s *URLService) CreateAndSave(originURL string, userID int) (string, error)
 	return utils.CreateShortURL(key, s.cfg.Network.BaseURL), nil
 }
 
+// CreateAndSaveBatch takes a slice of BatchRequest and creates and saves a batch of ShortenData objects.
+// It generates a short token for each URL and creates a ShortenData object with the original URL and the short URL.
+// The correlation ID from each BatchRequest is copied to the corresponding ShortenData object.
+// The generated ShortenData objects are then saved using the shortenRepository's SaveAll method.
+// Finally, it creates a slice of BatchResponse objects with the correlation ID and short URL from each
 func (s *URLService) CreateAndSaveBatch(urls []models.BatchRequest) ([]models.BatchResponse, error) {
 	var dataToSave []models.ShortenData
 	for _, url := range urls {
@@ -62,6 +71,8 @@ func (s *URLService) CreateAndSaveBatch(urls []models.BatchRequest) ([]models.Ba
 	return result, nil
 }
 
+// FindByURL searches for a ShortenData object in the shortenRepository based on the given key.
+// If the object is found, it returns the ShortenData object and true. Otherwise, it returns an empty ShortenData object and false.
 func (s *URLService) FindByURL(key string) (models.ShortenData, bool) {
 	shorten, ok := s.shortenRepository.FindByURL(key)
 	if !ok {
@@ -69,6 +80,10 @@ func (s *URLService) FindByURL(key string) (models.ShortenData, bool) {
 	}
 	return shorten, true
 }
+
+// FindByURLs retrieves a batch of ShortenData objects from the shortenRepository based on the specified URLs.
+// It extracts the original URLs from the batch request and uses them as keys to query the repository.
+// The method returns the matching ShortenData objects and any error that occurred during the query.
 func (s *URLService) FindByURLs(urls []models.BatchRequest) ([]models.ShortenData, error) {
 	var keys []string
 	for _, url := range urls {
@@ -77,6 +92,8 @@ func (s *URLService) FindByURLs(urls []models.BatchRequest) ([]models.ShortenDat
 	return s.shortenRepository.FindByURLs(keys)
 }
 
+// FindByKey finds the shorten data with the given key in the URLService.
+// It creates the short URL using the key and the base URL from the configuration.
 func (s *URLService) FindByKey(key string) (models.ShortenData, bool) {
 	shortURL := utils.CreateShortURL(key, s.cfg.Network.BaseURL)
 	shorten, ok := s.shortenRepository.FindByKey(shortURL)
@@ -85,6 +102,9 @@ func (s *URLService) FindByKey(key string) (models.ShortenData, bool) {
 	}
 	return shorten, ok
 }
+
+// FindAll retrieves all shorten data from the repository.
+// It returns a slice of ShortenData and an error if any.
 func (s *URLService) FindAll() ([]models.ShortenData, error) {
 	result, err := s.shortenRepository.FindAll()
 	if err != nil {
@@ -93,6 +113,8 @@ func (s *URLService) FindAll() ([]models.ShortenData, error) {
 	return result, nil
 }
 
+// FindAllByUserID retrieves all shorten data associated with a specific user by their userID.
+// It returns a slice of models.ShortenData and an error.
 func (s *URLService) FindAllByUserID(userID int) ([]models.ShortenData, error) {
 	result, err := s.shortenRepository.FindAllByUserID(userID)
 	if err != nil {
@@ -101,10 +123,14 @@ func (s *URLService) FindAllByUserID(userID int) ([]models.ShortenData, error) {
 	return result, nil
 }
 
+// Ping is a method of the URLService struct that is used to ping the service and check if it is available.
+// It takes a context.Context object as a parameter, but it is not used in the implementation.
+// It returns an error if there is an error during
 func (s *URLService) Ping(_ context.Context) error {
 	return nil
 }
 
+// DeleteByShortURLs deletes URLs based on the provided shortURLs.
 func (s *URLService) DeleteByShortURLs(shortURLs []string) error {
 	results := make(chan bool)
 	var wg sync.WaitGroup
