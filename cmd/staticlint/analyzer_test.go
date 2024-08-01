@@ -6,7 +6,7 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-// Write your test function
+// test function
 func TestNoOsExitInMain(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.RunWithSuggestedFixes(t, testdata, NoOsExitInMainAnalyzer)
