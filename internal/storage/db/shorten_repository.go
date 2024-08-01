@@ -20,6 +20,8 @@ func NewShortenRepository(postgres *Postgres) *ShortenRepository {
 	}
 }
 
+// Save inserts a new record into the "short" table with the given original URL, short URL, and user ID.
+// It returns an error if the insertion fails.
 func (r *ShortenRepository) Save(key, value string, userID int) error {
 	query := `INSERT INTO short (original_url, short_url, user_id) VALUES (@originalURL, @shortURL, @userID)`
 	args := pgx.NamedArgs{

@@ -93,6 +93,11 @@ func (s *InMemShortenStorage) Save(key, value string, userID int) error {
 	return nil
 }
 
+// SaveAll saves multiple ShortenData objects to the in-memory storage.
+// It appends the objects to the existing data and assigns each object a unique ID.
+// It also updates the keyToURL and urlToKey maps.
+// If writing to the file fails for any object, it returns an error.
+// It returns nil if the operation is successful.
 func (s *InMemShortenStorage) SaveAll(data []models.ShortenData) error {
 	defer s.mutex.Unlock()
 	s.mutex.Lock()
@@ -132,6 +137,8 @@ func (s *InMemShortenStorage) FindByURL(key string) (models.ShortenData, bool) {
 	return value, ok
 }
 
+// FindByKey retrieves the ShortenData object associated with a given key.
+// It returns the ShortenData object and a boolean indicating whether the object was found or not.
 func (s *InMemShortenStorage) FindByKey(key string) (models.ShortenData, bool) {
 	defer s.mutex.RUnlock()
 	s.mutex.RLock()

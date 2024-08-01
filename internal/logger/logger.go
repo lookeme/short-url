@@ -16,6 +16,7 @@ type Logger struct {
 	Log *zap.Logger
 }
 
+// LevelMap is a map that associates string keys with zapcore.Level values. It is used to map logging levels from string representations to their corresponding zapcore.Level constants
 var (
 	LevelMap = map[string]zapcore.Level{
 		"debug": zapcore.DebugLevel,
