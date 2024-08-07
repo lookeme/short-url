@@ -19,6 +19,8 @@ type ShortToken interface {
 	Get() string        // returns new random short token
 	Check(string) error // check the token length and alphabet
 }
+
+// ShortToken - interface for short token creation
 type shortToken struct {
 	length  int // token length
 	bufSize int // bytes bufer size
@@ -62,6 +64,7 @@ func (s *shortToken) Check(sToken string) error {
 	return nil
 }
 
+// GetToken - function to create token
 func GetToken(str string) (string, error) {
 	if str == "" {
 		return "", errors.New("token is invalid")
@@ -73,10 +76,12 @@ func GetToken(str string) (string, error) {
 	return tokens[1], nil
 }
 
+// CreateShortURL - function to create short url
 func CreateShortURL(key string, baseURL string) string {
 	return fmt.Sprintf("%s/%s", baseURL, key)
 }
 
+// ErrorCode - compare errors
 func ErrorCode(err error) string {
 	var pgerr *pgconn.PgError
 	ok := errors.As(err, &pgerr)

@@ -14,6 +14,7 @@ import (
 	"github.com/lookeme/short-url/internal/models"
 )
 
+// InMemShortenStorage is an in-memory implementation of a storage for shortened URLs.
 type InMemShortenStorage struct {
 	urlToKey map[string]models.ShortenData
 	keyToURL map[string]models.ShortenData
@@ -24,6 +25,9 @@ type InMemShortenStorage struct {
 	log      *logger.Logger
 }
 
+// InMemUserStorage is an in-memory implementation of a storage for user data.
+// The userMap field is a map that stores users by their ID.
+// The key is the user's ID (integer), and the value is a User object.
 type InMemUserStorage struct {
 	userMap map[int]models.User
 	id      int
@@ -31,6 +35,7 @@ type InMemUserStorage struct {
 	log     *logger.Logger
 }
 
+// NewInMemUserStorage creates a new instance of InMemUserStorage with the
 func NewInMemUserStorage(logger *logger.Logger) (*InMemUserStorage, error) {
 	return &InMemUserStorage{
 		userMap: make(map[int]models.User),
@@ -39,10 +44,22 @@ func NewInMemUserStorage(logger *logger.Logger) (*InMemUserStorage, error) {
 	}, nil
 }
 
+// FindAllByUserID retrieves all ShortenData objects associated with a given userID.
+// It returns an empty slice of ShortenData objects and a nil error.
 func (s *InMemShortenStorage) FindAllByUserID(userID int) ([]models.ShortenData, error) {
 	return []models.ShortenData{}, nil
 }
 
+// NewInMemShortenStorage creates a new instance of InMemShortenStorage with the given configuration and logger.
+// It opens the file specified in the configuration and initializes the necessary variables.
+// It returns a pointer to the created InMemShortenStorage and an error if any.
+// The InMemShortenStorage struct provides various methods to interact with the shorten data storage.
+// Example usage:
+//
+//	cfg := &configuration.Storage{
+//	   FileStoragePath: "/path/to/file",
+//	   ConnString:      "postgres://user:password@localhost:5432/db",
+//	   PGPoolCfg:       &pgxpool
 func NewInMemShortenStorage(cfg *configuration.Storage, logger *logger.Logger) (*InMemShortenStorage, error) {
 	logger.Log.Info("Creating local storage")
 	file, err := os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -59,6 +76,10 @@ func NewInMemShortenStorage(cfg *configuration.Storage, logger *logger.Logger) (
 	}, nil
 }
 
+// Save method saves a new ShortenData object to the in-memory storage, as well as writes it to a file.
+// It takes the key, value, and userID as parameters.
+// The key is the shortened URL, the value is the original URL, and the userID is the ID of the user who created the shorten URL.
+// It first acquires
 func (s *InMemShortenStorage) Save(key, value string, userID int) error {
 	defer s.mutex.Unlock()
 	s.mutex.Lock()
@@ -72,6 +93,11 @@ func (s *InMemShortenStorage) Save(key, value string, userID int) error {
 	return nil
 }
 
+// SaveAll saves multiple ShortenData objects to the in-memory storage.
+// It appends the objects to the existing data and assigns each object a unique ID.
+// It also updates the keyToURL and urlToKey maps.
+// If writing to the file fails for any object, it returns an error.
+// It returns nil if the operation is successful.
 func (s *InMemShortenStorage) SaveAll(data []models.ShortenData) error {
 	defer s.mutex.Unlock()
 	s.mutex.Lock()
@@ -87,6 +113,8 @@ func (s *InMemShortenStorage) SaveAll(data []models.ShortenData) error {
 	return nil
 }
 
+// FindByURLs retrieves a slice of ShortenData objects associated with the given URLs.
+// It searches the urlToKey map for each URL in the provided `keys
 func (s *InMemShortenStorage) FindByURLs(keys []string) ([]models.ShortenData, error) {
 	defer s.mutex.RUnlock()
 	var result []models.ShortenData
@@ -100,12 +128,17 @@ func (s *InMemShortenStorage) FindByURLs(keys []string) ([]models.ShortenData, e
 	return result, nil
 }
 
+// FindByURL retrieves the ShortenData object associated with the given URL key.
+// It returns the ShortenData object and a boolean value indicating whether the key was found.
 func (s *InMemShortenStorage) FindByURL(key string) (models.ShortenData, bool) {
 	defer s.mutex.RUnlock()
 	s.mutex.RLock()
 	value, ok := s.urlToKey[key]
 	return value, ok
 }
+
+// FindByKey retrieves the ShortenData object associated with a given key.
+// It returns the ShortenData object and a boolean indicating whether the object was found or not.
 func (s *InMemShortenStorage) FindByKey(key string) (models.ShortenData, bool) {
 	defer s.mutex.RUnlock()
 	s.mutex.RLock()
@@ -113,6 +146,9 @@ func (s *InMemShortenStorage) FindByKey(key string) (models.ShortenData, bool) {
 	return value, ok
 }
 
+// FindAll retrieves all ShortenData objects from the InMemShortenStorage.
+// It iterates over the keyToURL map to collect all shorten data and returns them.
+// It returns the result slice of ShortenData objects and a nil error.
 func (s *InMemShortenStorage) FindAll() ([]models.ShortenData, error) {
 	var result []models.ShortenData
 	s.mutex.RLock()
@@ -122,6 +158,8 @@ func (s *InMemShortenStorage) FindAll() ([]models.ShortenData, error) {
 	return result, nil
 }
 
+// writeToFile writes the given ShortenData to a file.
+// It first marshals the shortenData object into JSON format in
 func (s *InMemShortenStorage) writeToFile(shortenData *models.ShortenData) error {
 	b, err := json.Marshal(&shortenData)
 	if err != nil {
@@ -135,6 +173,11 @@ func (s *InMemShortenStorage) writeToFile(shortenData *models.ShortenData) error
 	return s.writer.Flush()
 }
 
+// RecoverFromFile reads data from a file and recovers it into the InMemShortenStorage object.
+// It starts by logging an info message indicating that the recovery process has begun.
+// It then creates a new scanner to read the file line by line.
+// For each line, it increments the ID of the storage object and creates a new ShortenData object with that ID.
+// It reads the line
 func (s *InMemShortenStorage) RecoverFromFile() error {
 	s.log.Log.Info("Starting recovering data from file....")
 	sc := bufio.NewScanner(s.file)
@@ -153,10 +196,16 @@ func (s *InMemShortenStorage) RecoverFromFile() error {
 	return nil
 }
 
+// Close closes the file associated with the InMemShortenStorage object.
+// It returns an error if the file fails to close.
 func (s *InMemShortenStorage) Close() error {
 	return s.file.Close()
 }
 
+// SaveUser saves a user with the given name and password into the user storage.
+// It generates a unique UserID for the user and adds it to the userMap.
+// The method returns the generated UserID and a nil error.
+// It uses
 func (s *InMemUserStorage) SaveUser(name, pass string) (int, error) {
 	defer s.mutex.Unlock()
 	s.mutex.Lock()
@@ -170,6 +219,8 @@ func (s *InMemUserStorage) SaveUser(name, pass string) (int, error) {
 	return user.UserID, nil
 }
 
+// FindByID retrieves a User object based on the provided userID.
+// It returns the User object and a nil error if the user
 func (s *InMemUserStorage) FindByID(userID int) (models.User, error) {
 	user, ok := s.userMap[userID]
 	if !ok {
@@ -178,6 +229,9 @@ func (s *InMemUserStorage) FindByID(userID int) (models.User, error) {
 	return user, nil
 }
 
+// DeleteByShortURL deletes a ShortenData object with the specified shortURL.
+// It sets the DeletedFlag to true for the specified shortURL in the keyToURL map.
+// It returns true to indicate that the deletion was successful.
 func (s *InMemShortenStorage) DeleteByShortURL(shortURL string) bool {
 	defer s.mutex.Unlock()
 	s.mutex.Lock()
