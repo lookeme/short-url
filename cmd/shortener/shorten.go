@@ -64,7 +64,7 @@ func run(ctx context.Context, cfg *configuration.Config) error {
 	defer func(storage *db.Storage) {
 		err := storage.Close()
 		if err != nil {
-
+			fmt.Printf("error during closing storage %s", err)
 		}
 	}(storage)
 	return server.Serve()
