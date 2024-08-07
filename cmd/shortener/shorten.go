@@ -8,6 +8,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/lookeme/short-url/internal/app/domain/user"
@@ -23,12 +24,23 @@ import (
 	"github.com/lookeme/short-url/internal/storage/inmemory"
 )
 
+// buildVersion represents the version number of the software build.
+// go run -ldflags "-X main.buildVersion=v1.0.0" main.go
+var (
+	buildVersion string = "N/A"
+	buildDate    string = "N/A"
+	buildCommit  string = "N/A"
+)
+
 // main is the entry point of the URL shortening application.
 // It sets up the necessary configuration and starts the application.
 // If something fails during setup or execution, the program will log a Fatal error message.
 func main() {
 	cfg := configuration.New()
 	ctx := context.Background()
+	fmt.Printf("Build version: %s\n", buildVersion)
+	fmt.Printf("Build date: %s\n", buildDate)
+	fmt.Printf("Build commit: %s\n", buildCommit)
 	if err := run(ctx, cfg); err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +61,12 @@ func run(ctx context.Context, cfg *configuration.Config) error {
 	authService := security.New(&userService, zlogger)
 	var gzip compression.Compressor
 	server := http.NewServer(urlHandler, cfg.Network, zlogger, &gzip, authService)
-	defer storage.Close()
+	defer func(storage *db.Storage) {
+		err := storage.Close()
+		if err != nil {
+
+		}
+	}(storage)
 	return server.Serve()
 }
 
