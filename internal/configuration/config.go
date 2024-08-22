@@ -12,11 +12,21 @@ import (
 )
 
 const (
+
+	// ServerAddress is a constant representing the key for the server address configuration in the configuration file.
 	ServerAddress = "server_address"
-	BaseURL       = "base_url"
+
+	// BaseURL is a constant representing the key for the base URL configuration in the configuration file.
+	BaseURL = "base_url"
+
+	// FileStorePath is a constant representing the key for the file storage path configuration in the configuration file.
 	FileStorePath = "file_storage_path"
-	DataBaseDNS   = "database_dsn"
-	EnableHTTPS   = "enable_https"
+
+	// DataBaseDNS is a constant representing the key for the database DNS configuration in the configuration file.
+	DataBaseDNS = "database_dsn"
+
+	// EnableHTTPS = "enable_https"
+	EnableHTTPS = "enable_https"
 )
 
 // Config holds all the configuration data needed for the
@@ -129,7 +139,7 @@ func readFromFile(filePath string, config *Config) {
 
 			case EnableHTTPS:
 				val := v.(bool)
-				if config.Network.EnableHTTPS == false && val == true {
+				if !config.Network.EnableHTTPS && val {
 					config.Network.EnableHTTPS = val
 				}
 			default:
