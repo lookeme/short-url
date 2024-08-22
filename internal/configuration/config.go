@@ -1,3 +1,5 @@
+// Package configuration provides functionality to load and retrieve
+// configuration data for the short-url application.
 package configuration
 
 import (
@@ -7,26 +9,36 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Config holds all the configuration data needed for the
+// short-url application to run correctly.
 type Config struct {
 	Network *NetworkCfg `yaml:"network"`
 	Logger  *LoggerCfg  `yaml:"logger"`
 	Storage *Storage    `yaml:"storage"`
 }
+
+// LoggerCfg structure
 type LoggerCfg struct {
 	Level  string `yaml:"level"`
 	Output string `yaml:"output"`
 }
+
+// NetworkCfg structure
 type NetworkCfg struct {
 	ServerAddress string `yaml:"address"`
 	BaseURL       string `yaml:"base-url"`
 }
 
+// Storage structure
 type Storage struct {
 	FileStoragePath string `yaml:"address"`
 	ConnString      string
 	PGPoolCfg       *pgxpool.Config
 }
 
+// New creates a new Config instance, loading data from
+// environment variables or configuration files as needed.
+// Returns an error if required configuration data could not be loaded.
 func New() *Config {
 	networkCfg := NetworkCfg{}
 	loggerCfg := LoggerCfg{}
