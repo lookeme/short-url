@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// BaseURL is a constant representing the key for the base URL configuration in the configuration file.
 const (
 
 	// ServerAddress is a constant representing the key for the server address configuration in the configuration file.
