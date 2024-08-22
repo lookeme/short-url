@@ -9,10 +9,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/lookeme/short-url/internal/app/domain/user"
 	"github.com/lookeme/short-url/internal/security"
+	"go.uber.org/zap"
 
 	"github.com/lookeme/short-url/internal/app/domain/shorten"
 	"github.com/lookeme/short-url/internal/compression"
@@ -37,16 +40,18 @@ var (
 // If something fails during setup or execution, the program will log a Fatal error message.
 func main() {
 	cfg := configuration.New()
-	ctx := context.Background()
 	fmt.Printf("Build version: %s\n", buildVersion)
 	fmt.Printf("Build date: %s\n", buildDate)
 	fmt.Printf("Build commit: %s\n", buildCommit)
-	if err := run(ctx, cfg); err != nil {
-		log.Fatal(err)
-	}
+	run(cfg)
 }
 
-func run(ctx context.Context, cfg *configuration.Config) error {
+func run(cfg *configuration.Config) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	// Setup signal catching for graceful shutdown
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	zlogger, err := logger.CreateLogger(cfg.Logger)
 	if err != nil {
 		return err
@@ -67,7 +72,16 @@ func run(ctx context.Context, cfg *configuration.Config) error {
 			fmt.Printf("error during closing storage %s", err)
 		}
 	}(storage)
-	return server.Serve()
+	go func() {
+		if err := server.Serve(); err != nil {
+			zlogger.Log.Error("Failed to start server", zap.Error(err))
+		}
+	}()
+	// Wait for a termination signal
+	sig := <-signalChan
+	fmt.Printf("Received shutdown signal %s, gracefully stopping...", sig.String())
+	cancel()
+	return nil
 }
 
 func createStorage(ctx context.Context, log *logger.Logger, cfg *configuration.Storage) (*db.Storage, error) {
