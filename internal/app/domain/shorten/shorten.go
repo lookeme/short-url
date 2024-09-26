@@ -29,7 +29,7 @@ func NewURLService(repository storage.ShortenRepository, log *logger.Logger, cfg
 	}
 }
 
-// handle error
+// CreateAndSave handle error
 func (s *URLService) CreateAndSave(originURL string, userID int) (string, error) {
 	token := utils.NewShortToken(7)
 	key := token.Get()

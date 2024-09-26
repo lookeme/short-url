@@ -14,7 +14,7 @@ import (
 
 // Authorization encapsulates the user service and provides methods for user authentication.
 type Authorization struct {
-	userService *user.UsrService
+	UserService *user.UsrService
 	Log         *logger.Logger
 }
 
@@ -65,7 +65,7 @@ type Claims struct {
 // New constructs a new instance of Authorization with a user service and logger.
 func New(userService *user.UsrService, logger *logger.Logger) *Authorization {
 	return &Authorization{
-		userService: userService,
+		UserService: userService,
 		Log:         logger,
 	}
 }
@@ -77,8 +77,8 @@ func (auth *Authorization) AuthMiddleware(next http.Handler) http.Handler {
 		var bearer = "Bearer "
 		token := r.Header.Get("Authorization")
 		token, err := utils.GetToken(token)
-		if err != nil || !auth.verifyToken(token) {
-			usr, err := auth.userService.CreateUser()
+		if err != nil || !auth.VerifyToken(token) {
+			usr, err := auth.UserService.CreateUser()
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
@@ -123,10 +123,10 @@ func GetUserID(tokenString string) int {
 	return claims.UserID
 }
 
-// verifyToken is a method that takes a token string as input and verifies its validity using JWT.
+// VerifyToken is a method that takes a token string as input and verifies its validity using JWT.
 // It returns true if the token is valid, otherwise false.
 // If there is an error during verification, it logs the error and returns false.
-func (auth *Authorization) verifyToken(tokenString string) bool {
+func (auth *Authorization) VerifyToken(tokenString string) bool {
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(SecretKey), nil
