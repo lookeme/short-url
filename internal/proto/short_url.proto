@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "short/pb";
+
+import "google/protobuf/empty.proto";
+
+
+message Request {
+  string URL = 1;
+}
+
+// BatchRequest represents a request for URL shortening with multiple URLs, each associated with a correlation ID.
+message BatchRequest  {
+  string CorrelationID = 1;
+  string OriginalURL   = 2;
+}
+
+// BatchResponse represents the response to a BatchRequest, including the correlation ID and the shortened URL.
+message BatchResponse  {
+    string CorrelationID  = 1;
+    string ShortURL       = 2;
+}
+
+// Response represents a generally applicable response with a result string.
+message Response  {
+  string Result  = 1;
+}
+
+message ResponseStatus  {
+  string Status  = 1;
+}
+
+
+// ShortenData encapsulates all data associated with a shortened URL, including metadata like the user ID who created it.
+message ShortenData  {
+  int64 ID = 1;
+  string  CorrelationID  = 2;
+  string  ShortURL  = 3;
+  string  OriginalURL = 4;
+  int64   UserID = 5;
+  bool  DeletedFlag  = 6;
+}
+
+// User represents the details of a user in the system, including their ID, name, and password.
+message User {
+  int64 UserID  = 1;
+  string Name   = 2;
+  string Pass   = 3;
+  bool  IsActive = 4;
+}
+
+message CreateAndSaveRequest {
+  string url = 1;
+}
+
+message CreateAndSaveResponse {
+  string Result = 1;
+}
+
+message FindByURLRequest {
+  string key = 1;
+}
+message FindByURLResponse {
+   ShortenData data = 1;
+}
+
+message FindByKeyRequest {
+  string key = 1;
+}
+
+message FindAllResponse {
+  repeated ShortenData data = 1;
+  string error = 2;
+}
+
+message CreateAndSaveBatchRequest {
+  repeated BatchRequest req = 1;
+}
+message CreateAndSaveBatchResponse {
+  repeated BatchResponse response =1;
+}
+
+message DeleteByShortURLSRequest {
+  repeated string urls = 1;
+}
+
+message DeleteByShortURLSResponse {
+  string error = 1;
+}
+
+
+// ShortenURLService provides an interface to operate on ShortenData.
+service ShortenURLService  {
+
+    rpc CreateShortURL(CreateAndSaveRequest) returns (CreateAndSaveResponse) {}
+
+    rpc GetByID(FindByURLRequest) returns (FindByURLResponse) {}
+
+    rpc CreateShortBatch(CreateAndSaveBatchRequest) returns (CreateAndSaveBatchResponse) {}
+
+    rpc GetAllUserURLs(google.protobuf.Empty) returns (FindAllResponse) {}
+
+    rpc Ping(google.protobuf.Empty) returns (ResponseStatus) {}
+
+    rpc DeleteByShortURLs(DeleteByShortURLSRequest) returns (ResponseStatus) {}
+}
+
+
+
+
