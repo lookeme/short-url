@@ -110,7 +110,7 @@ func authInterceptor(ctx context.Context, auth *security.Authorization) (context
 		if err != nil {
 			return nil, fmt.Errorf("can't create token: %s", err)
 		}
-		token, err := auth.BuildJWTString(usr.UserID)
+		token, _ := auth.BuildJWTString(usr.UserID)
 		metadata.AppendToOutgoingContext(ctx, "authorization", token)
 	}
 	token := tokenArr[0]
